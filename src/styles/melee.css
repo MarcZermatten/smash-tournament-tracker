@@ -43,9 +43,10 @@
 }
 
 html, body, #root {
-  height: 100%;
+  min-height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body {
@@ -392,9 +393,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 30px;
+  justify-content: flex-start;
+  padding: 10px;
+  padding-top: 0;
+  padding-bottom: 20px;
   position: relative;
+  overflow-y: auto;
 }
 
 /* ===========================================
@@ -407,9 +411,13 @@ body {
   display: flex;
   flex-direction: column;
   width: 95%;
-  max-width: 1100px;
-  min-height: 70vh;
-  padding: 25px 35px 25px 35px;
+  max-width: 1200px;
+  min-height: auto;
+  height: auto;
+  padding: 25px 40px 30px 40px;
+  margin-top: 0;
+  margin-bottom: 0;
+  overflow: visible;  /* Permet au logo de dépasser */
 
   /* Fond semi-transparent bleuté */
   background: linear-gradient(180deg,
@@ -461,6 +469,204 @@ body {
   padding-bottom: 0.5rem;
 }
 
+/* Logo container pour la page d'accueil - TRÈS GRAND et DÉBORDANT du cadre */
+.home-logo-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: -140px;  /* Fait déborder le logo vers le haut du cadre */
+  margin-bottom: -20px;
+  padding: 10px 0;
+  z-index: 100;  /* Au-dessus du cadre */
+}
+
+.home-logo {
+  height: 300px;  /* Logo TRÈS imposant - 2x plus grand */
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 35px rgba(0, 0, 0, 0.9))
+          drop-shadow(0 0 60px rgba(255, 200, 0, 0.4));
+  position: relative;
+  z-index: 100;
+  animation: logoFloat 3s ease-in-out infinite;
+  cursor: pointer;
+}
+
+.home-logo:hover {
+  animation: logoPulse 0.5s ease-out forwards;
+  filter: drop-shadow(0 4px 30px rgba(255, 200, 0, 0.6));
+}
+
+.logo-glow {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 200, 0, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 1;
+  animation: glowPulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes logoPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1.05); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* Logo header pour les sous-pages */
+.page-logo-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 3px solid var(--cyan);
+}
+
+.page-logo {
+  height: 70px;
+  width: auto;
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.5));
+  transition: filter 0.3s;
+}
+
+.page-logo:hover {
+  filter: drop-shadow(0 3px 15px rgba(255, 200, 0, 0.4));
+}
+
+.page-title-section {
+  flex: 1;
+}
+
+.page-title-section h1 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--yellow-selected);
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+
+.mode-subtitle {
+  display: block;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--cyan-light);
+  margin-top: 2px;
+  opacity: 0.8;
+}
+
+/* ============================================
+   NOUVEAU HEADER SOUS-PAGES (style menu principal)
+   Logo qui coupe le cadre bleu - position absolue
+   ============================================ */
+.subpage-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 15px 20px;
+  padding-left: 180px; /* Espace pour le logo en position absolue */
+  border-bottom: 3px solid var(--cyan);
+  min-height: 80px;
+}
+
+.subpage-logo-container {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.subpage-logo {
+  height: 140px;
+  width: auto;
+  filter: drop-shadow(0 5px 25px rgba(255, 200, 0, 0.5));
+  animation: subpageLogoFloat 4s ease-in-out infinite;
+}
+
+@keyframes subpageLogoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.subpage-logo-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(255, 200, 0, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: subpageGlowPulse 3s ease-in-out infinite;
+}
+
+@keyframes subpageGlowPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.9; }
+}
+
+.subpage-title {
+  flex: 1;
+}
+
+.subpage-title h1 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--yellow-selected);
+  text-shadow:
+    0 0 30px rgba(255, 200, 0, 0.5),
+    2px 2px 4px rgba(0, 0, 0, 0.8);
+  margin: 0;
+  letter-spacing: 0.1em;
+}
+
+.subpage-title .mode-subtitle {
+  font-size: 1rem;
+  margin-top: 5px;
+}
+
+/* Ajuster le cadre pour permettre le débordement du logo */
+.dashboard-frame {
+  overflow: visible !important;
+}
+
+.melee-header.logo-header {
+  justify-content: flex-start;
+  gap: 20px;
+}
+
+.header-logo {
+  height: 90px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+  transition: transform 0.3s ease;
+}
+
+.header-logo:hover {
+  transform: scale(1.05);
+}
+
 .melee-logo {
   font-family: 'Oswald', sans-serif;
   font-size: 3rem;
@@ -491,19 +697,7 @@ body {
   border-radius: 2px;
 }
 
-/* Petit marqueur au bout de la ligne */
-.melee-header-line::after {
-  content: '';
-  position: absolute;
-  right: 25px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
-  background: var(--cyan);
-  border-radius: 2px;
-  box-shadow: 0 0 10px var(--cyan-glow);
-}
+/* Petit marqueur supprimé */
 
 /* ===========================================
    CONTAINER MENU + PANNEAU LATERAL
@@ -511,11 +705,12 @@ body {
 
 .menu-container {
   display: flex;
-  gap: 3rem;
-  align-items: flex-start;
+  gap: 2.5rem;
+  align-items: stretch;
   justify-content: space-between;
   width: 100%;
   flex: 1;
+  min-height: 0;
 }
 
 /* ===========================================
@@ -529,23 +724,25 @@ body {
 .melee-main-menu {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   flex: 1;
   min-width: 350px;
-  max-width: 450px;
-  align-self: center;
-  margin-left: 30px;  /* Décale les boutons vers le centre */
+  margin-bottom: 20px;
+  max-width: 480px;
+  padding: 10px 0;
 }
 
 /* Décalage en ARC irrégulier des boutons (comme le modèle Melee) */
-/* Courbe naturelle, pas parfaitement symétrique */
-.melee-menu-item:nth-child(1) { margin-left: 65px; }
-.melee-menu-item:nth-child(2) { margin-left: 40px; }
-.melee-menu-item:nth-child(3) { margin-left: 18px; }
-.melee-menu-item:nth-child(4) { margin-left: 5px; }
-.melee-menu-item:nth-child(5) { margin-left: 0px; }  /* Point le plus à gauche */
-.melee-menu-item:nth-child(6) { margin-left: 12px; }
-.melee-menu-item:nth-child(7) { margin-left: 38px; }
+/* Courbe naturelle pour 9 boutons - Casual au centre */
+.melee-menu-item:nth-child(1) { margin-left: 75px; }
+.melee-menu-item:nth-child(2) { margin-left: 50px; }
+.melee-menu-item:nth-child(3) { margin-left: 28px; }
+.melee-menu-item:nth-child(4) { margin-left: 10px; }
+.melee-menu-item:nth-child(5) { margin-left: 0px; }  /* Point le plus à gauche - Casual */
+.melee-menu-item:nth-child(6) { margin-left: 10px; }
+.melee-menu-item:nth-child(7) { margin-left: 28px; }
+.melee-menu-item:nth-child(8) { margin-left: 50px; }
+.melee-menu-item:nth-child(9) { margin-left: 75px; }
 
 /* Bouton complet */
 .melee-menu-item {
@@ -623,28 +820,28 @@ body {
   z-index: 1;
 }
 
-/* Indicateur cercle (caché par défaut) */
+/* Indicateur Logo Smash (caché par défaut) */
 .select-indicator {
   position: absolute;
-  right: 12px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
+  right: 10px;
+  width: 30px;
+  height: 30px;
   opacity: 0;
-  transition: opacity 0.1s;
+  transition: all 0.15s;
   z-index: 2;
+  /* SVG Smash logo - trait vertical épais, horizontal très bas */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Ccircle cx='50' cy='50' r='50'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23c)'%3E%3Crect x='0' y='0' width='30' height='62' fill='%23705010'/%3E%3Crect x='0' y='70' width='30' height='30' fill='%23705010'/%3E%3Crect x='48' y='0' width='52' height='62' fill='%23705010'/%3E%3Crect x='48' y='70' width='52' height='30' fill='%23705010'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 0 4px rgba(112, 80, 16, 0.5));
+}
 
-  /* Double cercle concentrique */
-  background: radial-gradient(circle,
-    #ffe800 0%,
-    #ffe800 35%,
-    #a08020 40%,
-    #a08020 55%,
-    #ffe800 60%,
-    #c8a020 100%
-  );
-  border: 2px solid #705010;
-  box-shadow: 0 0 10px rgba(255, 216, 0, 0.6);
+/* Logo foncé quand le bouton est survolé */
+.melee-menu-item:hover .select-indicator,
+.melee-menu-item.selected .select-indicator {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CclipPath id='c2'%3E%3Ccircle cx='50' cy='50' r='50'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23c2)'%3E%3Crect x='0' y='0' width='30' height='62' fill='%23181008'/%3E%3Crect x='0' y='70' width='30' height='30' fill='%23181008'/%3E%3Crect x='48' y='0' width='52' height='62' fill='%23181008'/%3E%3Crect x='48' y='70' width='52' height='30' fill='%23181008'/%3E%3C/g%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 6px rgba(24, 16, 8, 0.8));
 }
 
 /* ===========================================
@@ -697,10 +894,10 @@ body {
 
 .side-panel {
   position: relative;
-  min-width: 340px;
-  max-width: 420px;
-  min-height: 320px;
-  padding: 35px 40px;
+  min-width: 300px;
+  max-width: 380px;
+  min-height: 280px;
+  padding: 30px 35px;
   align-self: center;
   margin: auto;  /* Centré horizontalement et verticalement */
 
@@ -1407,6 +1604,7 @@ body {
 /* --- Rotation Panel (gauche) --- */
 .rotation-panel {
   max-height: 100%;
+  overflow: hidden;
 }
 
 .rotation-progress-mini {
@@ -1429,6 +1627,7 @@ body {
   flex-direction: column;
   gap: 6px;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
 }
 
@@ -1450,7 +1649,7 @@ body {
 .matchup-mini:hover {
   border-color: var(--cyan);
   background: rgba(30, 80, 120, 0.6);
-  transform: translateX(3px);
+  box-shadow: inset 3px 0 0 var(--cyan);
 }
 
 .matchup-mini.active {
@@ -1748,6 +1947,30 @@ body {
   color: rgba(255, 255, 255, 0.5);
 }
 
+/* Bouton éditer résultats */
+.edit-results-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin-left: auto;
+  background: rgba(255, 100, 100, 0.2);
+  border: 1px solid rgba(255, 100, 100, 0.4);
+  border-radius: 6px;
+  color: #ff6b6b;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-results-btn:hover {
+  background: rgba(255, 100, 100, 0.4);
+  border-color: #ff6b6b;
+  transform: scale(1.1);
+}
+
 .empty-mini {
   text-align: center;
   color: rgba(255, 255, 255, 0.3);
@@ -1836,8 +2059,9 @@ body {
    =========================================== */
 
 .players-frame {
-  max-width: 700px;
+  max-width: 900px;
   min-height: auto;
+  width: 95%;
 }
 
 .players-message {
@@ -1871,8 +2095,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 50vh;
-  overflow-y: auto;
 }
 
 .player-row {
@@ -1897,6 +2119,7 @@ body {
   border-color: var(--yellow-selected);
   background: rgba(60, 50, 30, 0.5);
   cursor: default;
+  flex-wrap: wrap;
 }
 
 .player-row.casual {
@@ -1948,17 +2171,15 @@ body {
 
 /* Panel d'édition */
 .player-edit-panel {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
+  position: relative;
+  width: 100%;
+  margin-top: 10px;
   background: linear-gradient(180deg,
     rgba(15, 30, 60, 0.98) 0%,
     rgba(10, 20, 45, 0.98) 100%
   );
   border: 2px solid var(--yellow-selected);
-  border-top: none;
-  border-radius: 0 0 8px 8px;
+  border-radius: 8px;
   padding: 15px;
   z-index: 10;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -2301,6 +2522,33 @@ body {
   border-left-color: #d8b000;
 }
 
+/* Logo Smash sur sous-menus */
+.sub-menu-item::after {
+  content: '';
+  position: absolute;
+  right: 15px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffe800 0%, #d8a800 100%);
+  border: 2px solid #705010;
+  opacity: 0;
+  transition: opacity 0.1s;
+  overflow: hidden;
+}
+
+.sub-menu-item:hover::after,
+.sub-menu-item.active::after {
+  opacity: 1;
+}
+
+/* Croix du logo Smash - utilise box-shadow pour les lignes */
+.sub-menu-item::after {
+  box-shadow:
+    inset 10px 0 0 -7px #181008,
+    inset 0 8px 0 -5px #181008;
+}
+
 .sub-menu-item .menu-icon {
   font-size: 1.2rem;
 }
@@ -2367,6 +2615,96 @@ body {
 .select-card.disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Bouton Mode Suivant */
+.next-mode-container {
+  position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.next-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 30px;
+  background: linear-gradient(180deg, rgba(0, 150, 180, 0.3) 0%, rgba(0, 100, 140, 0.4) 100%);
+  border: 2px solid var(--cyan-light);
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(0, 150, 180, 0.3);
+}
+
+.next-mode-btn:hover {
+  background: linear-gradient(180deg, rgba(0, 180, 220, 0.4) 0%, rgba(0, 130, 170, 0.5) 100%);
+  transform: scale(1.05);
+  box-shadow: 0 6px 30px rgba(0, 180, 220, 0.4);
+}
+
+.next-mode-btn.results {
+  background: linear-gradient(180deg, rgba(255, 200, 0, 0.3) 0%, rgba(200, 150, 0, 0.4) 100%);
+  border-color: var(--yellow-selected);
+  box-shadow: 0 4px 20px rgba(255, 200, 0, 0.3);
+}
+
+.next-mode-btn.results:hover {
+  background: linear-gradient(180deg, rgba(255, 220, 0, 0.4) 0%, rgba(220, 170, 0, 0.5) 100%);
+  box-shadow: 0 6px 30px rgba(255, 220, 0, 0.4);
+}
+
+.next-mode-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.next-mode-name {
+  font-size: 1.3rem;
+  color: white;
+  font-weight: 500;
+}
+
+.next-mode-btn.results .next-mode-name {
+  color: var(--yellow-selected);
+}
+
+.next-mode-arrow {
+  font-size: 1.5rem;
+  color: var(--cyan-light);
+  animation: pulseArrow 1.5s ease-in-out infinite;
+}
+
+.next-mode-btn.results .next-mode-arrow {
+  color: var(--yellow-selected);
+  animation: pulseTrophy 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseArrow {
+  0%, 100% { transform: translateX(0); opacity: 1; }
+  50% { transform: translateX(5px); opacity: 0.7; }
+}
+
+@keyframes pulseTrophy {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
 }
 
 /* Bouton retour stylisé */

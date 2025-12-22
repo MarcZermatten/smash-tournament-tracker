@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getLeaderboard } from '../data/storage';
-import { PLAYERS } from '../data/players';
+import { getPlayers } from '../data/players';
 import PlayerCard from './PlayerCard';
 
 const Leaderboard = ({ filterCasual = true, mode = null }) => {
@@ -12,7 +12,8 @@ const Leaderboard = ({ filterCasual = true, mode = null }) => {
 
       // Filtrer Daniel si demandé
       if (filterCasual) {
-        data = data.filter(entry => !PLAYERS[entry.player]?.casual);
+        const players = getPlayers();
+        data = data.filter(entry => !players[entry.player]?.casual);
       }
 
       // Filtrer par mode si spécifié

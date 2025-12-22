@@ -10,12 +10,28 @@ const getDefaultData = () => ({
     boris: { ffa: 0, team_ff: 0, team_noff: 0, casual: 0, '1v1': 0 },
     daniel: { ffa: 0, team_ff: 0, team_noff: 0, casual: 0, '1v1': 0 }
   },
+  tournamentHistory: [], // Historique des tournois terminés
   settings: {
     soundEnabled: true,
     musicEnabled: true,
-    volume: 0.5
+    volume: 0.5,
+    // Config points par défaut
+    points: {
+      '1v1': { win: 3, lose: 0 },
+      ffa: { 1: 5, 2: 3, 3: 1, 4: 0 },
+      team_ff: { win: 3, lose: 0 },
+      team_noff: { win: 3, lose: 0 },
+      casual: { win: 2, lose: 0 }
+    },
+    // Config matchs par défaut
+    matchConfig: {
+      '1v1': 'all', // 'all' = tous s'affrontent 1 fois
+      ffa: 5,        // 5 matchs FFA
+      team_ff: 'all',
+      team_noff: 'all'
+    }
   },
-  version: 1
+  version: 2
 });
 
 export const loadData = () => {
@@ -181,4 +197,80 @@ export const updateSettings = (newSettings) => {
   data.settings = { ...data.settings, ...newSettings };
   saveData(data);
   return data.settings;
+};
+
+// ====== TOURNAMENT HISTORY ======
+
+export const saveTournament = (tournament) => {
+  const data = loadData();
+
+  // Calculer le classement final
+  const leaderboard = getLeaderboard();
+  const tournamentPlayers = tournament.players || [];
+  const finalRanking = leaderboard
+    .filter(p => tournamentPlayers.includes(p.player))
+    .map((p, idx) => ({
+      ...p,
+      rank: idx + 1
+    }));
+
+  const archivedTournament = {
+    id: Date.now(),
+    name: tournament.name,
+    startedAt: tournament.startedAt,
+    endedAt: new Date().toISOString(),
+    players: tournament.players,
+    modes: tournament.modes,
+    ranking: finalRanking,
+    winner: finalRanking[0]?.player || null,
+    matchCount: data.matches.length
+  };
+
+  if (!data.tournamentHistory) {
+    data.tournamentHistory = [];
+  }
+  data.tournamentHistory.unshift(archivedTournament); // Plus récent en premier
+
+  saveData(data);
+  return archivedTournament;
+};
+
+export const getTournamentHistory = () => {
+  const data = loadData();
+  return data.tournamentHistory || [];
+};
+
+export const getTournamentById = (id) => {
+  const history = getTournamentHistory();
+  return history.find(t => t.id === id);
+};
+
+export const deleteTournament = (id) => {
+  const data = loadData();
+  data.tournamentHistory = (data.tournamentHistory || []).filter(t => t.id !== id);
+  saveData(data);
+};
+
+export const getPointsConfig = () => {
+  const data = loadData();
+  return data.settings?.points || getDefaultData().settings.points;
+};
+
+export const updatePointsConfig = (newPoints) => {
+  const data = loadData();
+  data.settings.points = { ...data.settings.points, ...newPoints };
+  saveData(data);
+  return data.settings.points;
+};
+
+export const getMatchConfig = () => {
+  const data = loadData();
+  return data.settings?.matchConfig || getDefaultData().settings.matchConfig;
+};
+
+export const updateMatchConfig = (newConfig) => {
+  const data = loadData();
+  data.settings.matchConfig = { ...data.settings.matchConfig, ...newConfig };
+  saveData(data);
+  return data.settings.matchConfig;
 };

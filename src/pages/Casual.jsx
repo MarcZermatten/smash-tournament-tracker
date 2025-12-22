@@ -1,18 +1,50 @@
-import { useState, useCallback } from 'react';
-import { ALL_PLAYERS, POINTS_SYSTEM, getPlayer } from '../data/players';
+import { useState, useCallback, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { getAllPlayers, getPlayer, POINTS_SYSTEM } from '../data/players';
 import { addMatch, getMatchesByType, undoLastMatch } from '../data/storage';
 import { useAudio } from '../hooks/useAudio';
-import BackButton from '../components/BackButton';
-import Leaderboard from '../components/Leaderboard';
+import LayoutEditor from '../components/LayoutEditor';
+
+// Configuration par défaut du layout Casual
+const DEFAULT_LAYOUT = {
+  frameTop: 20,
+  frameScale: 100,
+  logoSize: 315,
+  logoX: -50,
+  logoY: -100,
+  titleX: -40,
+  titleAlign: 0,
+  fontSize: 104,
+};
+
+const LAYOUT_CONTROLS = [
+  { key: 'frameTop', label: 'Position Y', min: 0, max: 20, unit: 'vh', group: 'Cadre' },
+  { key: 'frameScale', label: 'Échelle', min: 70, max: 110, unit: '%', group: 'Cadre' },
+  { key: 'logoSize', label: 'Taille', min: 80, max: 350, unit: 'px', group: 'Logo' },
+  { key: 'logoX', label: 'Position X', min: -50, max: 200, unit: 'px', group: 'Logo' },
+  { key: 'logoY', label: 'Position Y', min: -100, max: 100, unit: 'px', group: 'Logo' },
+  { key: 'titleX', label: 'Décalage X', min: -300, max: 200, unit: 'px', group: 'Titre' },
+  { key: 'titleAlign', label: 'Alignement', min: 0, max: 100, step: 50, unit: '%', group: 'Titre' },
+  { key: 'fontSize', label: 'Taille texte', min: 80, max: 120, unit: '%', group: 'Texte' },
+];
 
 const Casual = () => {
-  const [view, setView] = useState('menu');
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [rankings, setRankings] = useState({});
   const [lastMatch, setLastMatch] = useState(null);
+  const [allPlayers, setAllPlayers] = useState(getAllPlayers());
+  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
   const { playSound } = useAudio();
 
   const config = POINTS_SYSTEM.casual;
+
+  useEffect(() => {
+    const handleUpdate = () => setAllPlayers(getAllPlayers());
+    window.addEventListener('playersUpdate', handleUpdate);
+    return () => window.removeEventListener('playersUpdate', handleUpdate);
+  }, []);
+
+  const matches = getMatchesByType('casual');
 
   const togglePlayer = (playerId) => {
     playSound('select');
@@ -30,7 +62,6 @@ const Casual = () => {
 
   const handlePositionSelect = (playerId, position) => {
     playSound('select');
-
     const currentHolder = Object.entries(rankings).find(([_, pos]) => pos === position)?.[0];
 
     setRankings(prev => {
@@ -44,7 +75,6 @@ const Casual = () => {
   };
 
   const getPointsForPosition = (position, totalPlayers) => {
-    // Système de points dynamique selon le nombre de joueurs
     const maxPoints = totalPlayers;
     return Math.max(0, maxPoints - position + 1);
   };
@@ -72,7 +102,6 @@ const Casual = () => {
     setLastMatch(match);
     setRankings({});
     setSelectedPlayers([]);
-    setView('menu');
 
     window.dispatchEvent(new Event('scoreUpdate'));
   }, [rankings, selectedPlayers, isComplete, playSound]);
@@ -86,358 +115,324 @@ const Casual = () => {
     }
   };
 
-  const matches = getMatchesByType('casual');
-
-  const renderMenu = () => (
-    <div className="mode-menu">
-      <h1 className="melee-title" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-        🎉 Mode Casual
-      </h1>
-      <p className="melee-subtitle" style={{ marginBottom: '2rem' }}>
-        {config.description}
-      </p>
-
-      <nav className="melee-menu">
-        <button className="melee-button" onClick={() => setView('newMatch')}>
-          🎮 Nouvelle Partie
-        </button>
-        <button className="melee-button" onClick={() => setView('history')}>
-          📜 Historique ({matches.length})
-        </button>
-        <button className="melee-button" onClick={() => setView('stats')}>
-          📊 Classement Casual
-        </button>
-      </nav>
-
-      {lastMatch && (
-        <div className="last-match-info" style={{ marginTop: '1.5rem' }}>
-          <p className="text-cyan">Dernière partie enregistrée</p>
-          <button
-            className="melee-button"
-            onClick={handleUndo}
-            style={{ marginTop: '0.5rem', fontSize: '0.9rem', padding: '0.5rem 1rem' }}
-          >
-            ↩️ Annuler
-          </button>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderPlayerSelect = () => (
-    <div className="player-select">
-      <h2 className="melee-frame-header">Qui joue ? (2-8 joueurs)</h2>
-
-      <div className="players-selection">
-        {ALL_PLAYERS.map(playerId => {
-          const player = getPlayer(playerId);
-          const isSelected = selectedPlayers.includes(playerId);
-
-          return (
-            <button
-              key={playerId}
-              className={`player-toggle melee-frame ${isSelected ? 'selected' : ''}`}
-              onClick={() => togglePlayer(playerId)}
-              style={{ '--player-color': player.color }}
-            >
-              <div className="player-avatar" style={{ background: player.color }}>
-                {player.initial}
-              </div>
-              <span>{player.name}</span>
-              {player.casual && <small className="text-cyan">(Occasionnel)</small>}
-              {isSelected && <span className="check">✓</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      <p className="text-cyan mt-1">
-        {selectedPlayers.length} joueur{selectedPlayers.length > 1 ? 's' : ''} sélectionné{selectedPlayers.length > 1 ? 's' : ''}
-      </p>
-    </div>
-  );
-
-  const renderRankingSelect = () => {
-    if (selectedPlayers.length < 2) return null;
-
-    return (
-      <div className="ranking-select" style={{ marginTop: '1.5rem' }}>
-        <h3 className="text-gold mb-1">Classement de la partie</h3>
-
-        <div className="ranking-grid">
-          {selectedPlayers.map(playerId => {
-            const player = getPlayer(playerId);
-            const currentPosition = rankings[playerId];
-
-            return (
-              <div key={playerId} className="player-ranking melee-frame">
-                <div className="player-info-small">
-                  <span className="player-avatar" style={{ background: player.color, width: '30px', height: '30px', fontSize: '0.9rem' }}>
-                    {player.initial}
-                  </span>
-                  <span>{player.name}</span>
-                </div>
-
-                <div className="position-buttons">
-                  {selectedPlayers.map((_, idx) => {
-                    const pos = idx + 1;
-                    const isSelected = currentPosition === pos;
-                    const isTaken = Object.values(rankings).includes(pos) && !isSelected;
-
-                    return (
-                      <button
-                        key={pos}
-                        className={`pos-btn ${isSelected ? 'selected' : ''} ${isTaken ? 'taken' : ''}`}
-                        onClick={() => handlePositionSelect(playerId, pos)}
-                        disabled={isTaken}
-                        title={`+${getPointsForPosition(pos, selectedPlayers.length)} pts`}
-                      >
-                        {pos}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="points-legend" style={{ marginTop: '1rem' }}>
-          <p className="text-cyan" style={{ fontSize: '0.8rem' }}>
-            Points: {selectedPlayers.map((_, idx) => `${idx + 1}er = ${getPointsForPosition(idx + 1, selectedPlayers.length)}pts`).join(', ')}
-          </p>
-        </div>
-      </div>
-    );
+  const clearSelection = () => {
+    setSelectedPlayers([]);
+    setRankings({});
+    playSound('cancel');
   };
 
-  const renderNewMatch = () => (
-    <div className="new-match">
-      {renderPlayerSelect()}
-      {renderRankingSelect()}
+  // Stats par joueur
+  const playerStats = allPlayers.reduce((acc, playerId) => {
+    const playerMatches = matches.filter(m =>
+      m.results?.some(r => r.player === playerId)
+    );
+    const wins = playerMatches.filter(m =>
+      m.results?.find(r => r.player === playerId)?.position === 1
+    ).length;
+    const totalPoints = playerMatches.reduce((sum, m) => {
+      const result = m.results?.find(r => r.player === playerId);
+      return sum + (result?.points || 0);
+    }, 0);
 
-      <div className="match-actions" style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
-        <button
-          className="melee-button"
-          onClick={() => {
-            setSelectedPlayers([]);
-            setRankings({});
-            setView('menu');
-          }}
-          style={{ flex: 1 }}
-        >
-          ❌ Annuler
-        </button>
-        <button
-          className={`melee-button ${isComplete ? 'selected' : ''}`}
-          onClick={handleSubmit}
-          disabled={!isComplete}
-          style={{ flex: 2 }}
-        >
-          ✅ Valider ({Object.keys(rankings).length}/{selectedPlayers.length})
-        </button>
-      </div>
-    </div>
-  );
+    acc[playerId] = { matches: playerMatches.length, wins, totalPoints };
+    return acc;
+  }, {});
 
-  const renderHistory = () => (
-    <div className="match-history">
-      <h2 className="melee-frame-header">📜 Historique Casual</h2>
+  const recentMatches = matches.slice(0, 5);
 
-      {matches.length === 0 ? (
-        <p className="text-cyan text-center">Aucune partie enregistrée</p>
-      ) : (
-        <div className="history-list">
-          {matches.slice(0, 20).map((match, idx) => (
-            <div key={match.id} className="history-item melee-frame" style={{ marginBottom: '0.5rem', padding: '0.8rem' }}>
-              <div className="history-header">
-                <span className="text-gold">Partie #{matches.length - idx}</span>
-                <span className="text-cyan" style={{ fontSize: '0.8rem' }}>
-                  {match.playerCount} joueurs • {new Date(match.timestamp).toLocaleDateString('fr-FR')}
-                </span>
-              </div>
-              <div className="history-results" style={{ marginTop: '0.5rem' }}>
-                {match.results.sort((a, b) => a.position - b.position).map(r => (
-                  <div key={r.player} className="history-result">
-                    <span className={`position-badge position-${Math.min(r.position, 4)}`} style={{ width: '20px', height: '20px', fontSize: '0.7rem' }}>
-                      {r.position}
+  // Styles dynamiques basés sur le layout
+  const dynamicStyles = {
+    frame: {
+      transform: `scale(${layout.frameScale / 100})`,
+      marginTop: `${layout.frameTop}vh`,
+      transformOrigin: 'top center',
+      fontSize: `${layout.fontSize}%`,
+    },
+    logoContainer: {
+      left: `${layout.logoX}px`,
+      transform: `translateY(calc(-50% + ${layout.logoY}px))`,
+    },
+    logo: {
+      height: `${layout.logoSize}px`,
+    },
+    title: {
+      marginLeft: `${layout.titleX}px`,
+      textAlign: layout.titleAlign === 0 ? 'left' : layout.titleAlign === 100 ? 'right' : 'center',
+    },
+    header: {
+      paddingLeft: `${layout.logoX + layout.logoSize + 20}px`,
+    },
+  };
+
+  return (
+    <div className="home-page">
+      <div className="melee-main-frame dashboard-frame" style={dynamicStyles.frame}>
+        {/* Header avec Logo style menu principal */}
+        <div className="subpage-header" style={dynamicStyles.header}>
+          <div className="subpage-logo-container" style={dynamicStyles.logoContainer}>
+            <img src="/logo.png" alt="BFSA" className="subpage-logo" style={dynamicStyles.logo} />
+            <div className="subpage-logo-glow"></div>
+          </div>
+          <div className="subpage-title" style={dynamicStyles.title}>
+            <h1>CASUAL</h1>
+            <span className="mode-subtitle">Parties détendues</span>
+          </div>
+        </div>
+
+        {/* Dashboard Layout - 3 colonnes */}
+        <div className="dashboard-container">
+          {/* COLONNE GAUCHE - Sélection joueurs */}
+          <div className="dashboard-panel rotation-panel">
+            <div className="panel-header">
+              <span className="panel-title">Joueurs</span>
+              <span className="panel-badge">{selectedPlayers.length}/8</span>
+            </div>
+
+            <div className="matchup-list">
+              {allPlayers.map(playerId => {
+                const player = getPlayer(playerId);
+                const isSelected = selectedPlayers.includes(playerId);
+                const stats = playerStats[playerId];
+
+                return (
+                  <button
+                    key={playerId}
+                    className={`matchup-mini ${isSelected ? 'active' : ''}`}
+                    onClick={() => togglePlayer(playerId)}
+                    style={{
+                      justifyContent: 'space-between',
+                      borderLeft: `3px solid ${player.color}`
+                    }}
+                  >
+                    <span style={{ color: player.color, fontWeight: 500 }}>
+                      {player.name}
                     </span>
-                    <span>{getPlayer(r.player)?.name}</span>
-                    <span className="text-gold">+{r.points}</span>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
+                        {stats.totalPoints}pts
+                      </span>
+                      {isSelected && (
+                        <span style={{ color: 'var(--cyan-light)' }}>✓</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* COLONNE CENTRALE - Classement */}
+          <div className="dashboard-panel match-panel">
+            <div className="panel-header">
+              <span className="panel-title">Classement</span>
+              <span className="panel-badge">{Object.keys(rankings).length}/{selectedPlayers.length}</span>
+            </div>
+
+            {selectedPlayers.length >= 2 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {selectedPlayers.map(playerId => {
+                  const player = getPlayer(playerId);
+                  const currentPosition = rankings[playerId];
+
+                  return (
+                    <div key={playerId} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px',
+                      background: currentPosition ? 'rgba(100, 80, 30, 0.4)' : 'rgba(20, 40, 80, 0.5)',
+                      border: `2px solid ${currentPosition ? 'var(--yellow-selected)' : 'rgba(100, 150, 200, 0.3)'}`,
+                      borderRadius: '6px'
+                    }}>
+                      <div style={{
+                        width: '35px',
+                        height: '35px',
+                        borderRadius: '50%',
+                        background: player.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#0a0a1a',
+                        fontWeight: 600,
+                        fontSize: '0.9rem'
+                      }}>
+                        {player.initial}
+                      </div>
+                      <span style={{ flex: 1, fontFamily: 'Oswald' }}>{player.name}</span>
+
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {selectedPlayers.map((_, idx) => {
+                          const pos = idx + 1;
+                          const isSelected = currentPosition === pos;
+                          const isTaken = Object.values(rankings).includes(pos) && !isSelected;
+                          const pts = getPointsForPosition(pos, selectedPlayers.length);
+
+                          return (
+                            <button
+                              key={pos}
+                              onClick={() => !isTaken && handlePositionSelect(playerId, pos)}
+                              disabled={isTaken}
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: isSelected
+                                  ? pos === 1 ? 'linear-gradient(135deg, #ffd700, #b8860b)'
+                                    : pos === 2 ? 'linear-gradient(135deg, #c0c0c0, #808080)'
+                                    : pos === 3 ? 'linear-gradient(135deg, #cd7f32, #8b4513)'
+                                    : 'linear-gradient(180deg, #ffe840 0%, #d0a800 100%)'
+                                  : isTaken
+                                    ? 'rgba(50, 50, 50, 0.5)'
+                                    : 'rgba(20, 40, 80, 0.6)',
+                                border: `2px solid ${isSelected ? '#ffe860' : isTaken ? '#333' : 'rgba(100, 150, 200, 0.3)'}`,
+                                borderRadius: '4px',
+                                color: isSelected ? '#1a1a1a' : isTaken ? '#555' : '#c0d0e0',
+                                cursor: isTaken ? 'not-allowed' : 'pointer',
+                                fontFamily: 'Oswald',
+                                fontSize: '0.85rem',
+                                opacity: isTaken ? 0.4 : 1
+                              }}
+                            >
+                              <span style={{ fontWeight: 600 }}>{pos}</span>
+                              <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>+{pts}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{
+                textAlign: 'center',
+                padding: '40px 20px',
+                color: 'var(--cyan-light)',
+                fontFamily: 'Oswald'
+              }}>
+                Sélectionne au moins 2 joueurs
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="match-quick-actions" style={{ marginTop: 'auto' }}>
+              {selectedPlayers.length > 0 && (
+                <button className="action-btn cancel" onClick={clearSelection}>
+                  Annuler
+                </button>
+              )}
+              <button
+                className={`action-btn validate ${isComplete ? 'ready' : ''}`}
+                onClick={handleSubmit}
+                disabled={!isComplete}
+              >
+                Valider
+              </button>
+            </div>
+          </div>
+
+          {/* COLONNE DROITE - Historique */}
+          <div className="dashboard-panel results-panel">
+            {lastMatch && (
+              <div className="last-match-alert">
+                <span className="alert-winner" style={{ color: getPlayer(lastMatch.results?.find(r => r.position === 1)?.player)?.color }}>
+                  {getPlayer(lastMatch.results?.find(r => r.position === 1)?.player)?.name}
+                </span>
+                <span className="alert-text">gagne !</span>
+                <button className="undo-btn" onClick={handleUndo}>Annuler</button>
+              </div>
+            )}
+
+            <div className="panel-header">
+              <span className="panel-title">Historique</span>
+              <span className="panel-badge">{matches.length}</span>
+            </div>
+
+            {recentMatches.length > 0 ? (
+              <div className="recent-list" style={{ maxHeight: '180px' }}>
+                {recentMatches.map((match) => (
+                  <div key={match.id} style={{
+                    padding: '8px 10px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    borderRadius: '4px',
+                    marginBottom: '6px',
+                    fontSize: '0.8rem'
+                  }}>
+                    <div style={{ color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>
+                      {match.playerCount} joueurs
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {match.results?.sort((a, b) => a.position - b.position).slice(0, 3).map(r => (
+                        <span key={r.player} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}>
+                          <span style={{
+                            width: '16px',
+                            height: '16px',
+                            borderRadius: '50%',
+                            background: r.position === 1 ? 'linear-gradient(135deg, #ffd700, #b8860b)'
+                              : r.position === 2 ? 'linear-gradient(135deg, #c0c0c0, #808080)'
+                              : 'linear-gradient(135deg, #cd7f32, #8b4513)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.6rem',
+                            fontWeight: 600,
+                            color: '#1a1a1a'
+                          }}>
+                            {r.position}
+                          </span>
+                          <span style={{ color: getPlayer(r.player)?.color }}>
+                            {getPlayer(r.player)?.name}
+                          </span>
+                        </span>
+                      ))}
+                      {match.results?.length > 3 && (
+                        <span style={{ color: 'rgba(255,255,255,0.4)' }}>
+                          +{match.results.length - 3}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
+            ) : (
+              <div className="empty-mini">Aucune partie</div>
+            )}
+
+            {/* Système de points */}
+            <div className="panel-header" style={{ marginTop: '1rem' }}>
+              <span className="panel-title">Points</span>
             </div>
-          ))}
+            <div style={{ fontSize: '0.8rem', color: 'var(--cyan-light)' }}>
+              <div style={{ marginBottom: '6px' }}>
+                Points = nb joueurs - position + 1
+              </div>
+              <div style={{ opacity: 0.7, fontSize: '0.75rem' }}>
+                Ex: 4 joueurs → 1er: 4pts, 2e: 3pts, 3e: 2pts, 4e: 1pt
+              </div>
+            </div>
+          </div>
         </div>
-      )}
-
-      <button className="melee-button" onClick={() => setView('menu')} style={{ marginTop: '1rem', width: '100%' }}>
-        ← Retour
-      </button>
-    </div>
-  );
-
-  const renderStats = () => (
-    <div className="mode-stats">
-      <h2 className="melee-frame-header">📊 Classement Casual</h2>
-      <Leaderboard mode="casual" filterCasual={false} />
-      <button className="melee-button" onClick={() => setView('menu')} style={{ marginTop: '1rem', width: '100%' }}>
-        ← Retour
-      </button>
-    </div>
-  );
-
-  return (
-    <div className="page casual-page">
-      <div className="page-content">
-        {view === 'menu' && renderMenu()}
-        {view === 'newMatch' && renderNewMatch()}
-        {view === 'history' && renderHistory()}
-        {view === 'stats' && renderStats()}
       </div>
 
-      {view === 'menu' && <BackButton to="/" />}
+      {/* Bouton retour */}
+      <Link to="/" className="back-btn">
+        &larr; Menu
+      </Link>
 
-      <style>{`
-        .casual-page {
-          min-height: 100vh;
-          padding: 2rem;
-          display: flex;
-          align-items: flex-start;
-          justify-content: center;
-          padding-top: 3rem;
-        }
-
-        .page-content {
-          width: 100%;
-          max-width: 800px;
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .mode-menu {
-          text-align: center;
-        }
-
-        .players-selection {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: 0.5rem;
-        }
-
-        .player-toggle {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.6rem;
-          cursor: pointer;
-          transition: all 0.2s;
-          border: 2px solid transparent;
-          background: var(--gradient-button);
-          color: white;
-        }
-
-        .player-toggle:hover {
-          border-color: var(--player-color);
-        }
-
-        .player-toggle.selected {
-          border-color: var(--melee-cyan);
-          background: var(--gradient-button-hover);
-        }
-
-        .player-toggle .check {
-          margin-left: auto;
-          color: var(--melee-cyan);
-          font-size: 1.2rem;
-        }
-
-        .ranking-grid {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-
-        .player-ranking {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0.6rem;
-          gap: 1rem;
-        }
-
-        .player-info-small {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-
-        .position-buttons {
-          display: flex;
-          gap: 0.3rem;
-        }
-
-        .pos-btn {
-          width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--gradient-button);
-          border: 1px solid rgba(255,255,255,0.3);
-          color: white;
-          cursor: pointer;
-          font-family: 'Orbitron', sans-serif;
-          font-size: 0.9rem;
-          transition: all 0.2s;
-        }
-
-        .pos-btn:hover:not(:disabled) {
-          border-color: var(--melee-gold);
-          transform: scale(1.1);
-        }
-
-        .pos-btn.selected {
-          background: var(--gradient-gold);
-          color: #1a0a2e;
-          border-color: var(--melee-gold);
-        }
-
-        .pos-btn.taken {
-          opacity: 0.3;
-          cursor: not-allowed;
-        }
-
-        .history-results {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-        }
-
-        .history-result {
-          display: flex;
-          align-items: center;
-          gap: 0.3rem;
-          font-size: 0.85rem;
-        }
-
-        .history-list {
-          max-height: 60vh;
-          overflow-y: auto;
-        }
-
-        @media (max-width: 500px) {
-          .player-ranking {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .position-buttons {
-            justify-content: center;
-            flex-wrap: wrap;
-          }
-        }
-      `}</style>
+      {/* Layout Editor (mode dev) */}
+      <LayoutEditor
+        pageKey="casual"
+        defaultLayout={DEFAULT_LAYOUT}
+        controls={LAYOUT_CONTROLS}
+        onLayoutChange={setLayout}
+      />
     </div>
   );
 };

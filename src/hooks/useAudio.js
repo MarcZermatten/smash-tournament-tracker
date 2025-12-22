@@ -11,10 +11,10 @@ const DEFAULT_SOUNDS = {
 };
 
 const DEFAULT_MUSIC = {
-  menu: null,      // Musique du menu principal
-  ffa: null,       // Musique mode FFA
-  team: null,      // Musique mode équipe
-  results: null,   // Musique des résultats
+  menu: '/audio/menu_melee.mp3',  // Musique du menu principal SSBM
+  ffa: '/audio/menu_melee.mp3',   // Musique mode FFA
+  team: '/audio/menu_melee.mp3',  // Musique mode équipe
+  results: '/audio/menu_melee.mp3', // Musique des résultats
 };
 
 export const useAudio = () => {

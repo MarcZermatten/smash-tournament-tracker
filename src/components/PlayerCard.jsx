@@ -1,7 +1,7 @@
-import { PLAYERS } from '../data/players';
+import { getPlayer } from '../data/players';
 
 const PlayerCard = ({ playerId, score, position, showPosition = true, onClick, selected }) => {
-  const player = PLAYERS[playerId];
+  const player = getPlayer(playerId);
   if (!player) return null;
 
   return (

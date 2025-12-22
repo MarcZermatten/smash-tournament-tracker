@@ -1,8 +1,42 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { getMainPlayers, getPlayer, getAvatar } from '../data/players';
+import { Link, useNavigate } from 'react-router-dom';
+import { getMainPlayers, getPlayer, getAvatar, getPointsSystem } from '../data/players';
 import { addMatch, getMatchesByType, undoLastMatch } from '../data/storage';
 import { useAudio } from '../hooks/useAudio';
+import { useTournament } from '../context/TournamentContext';
+import LayoutEditor from '../components/LayoutEditor';
+
+// Configuration par défaut du layout 1v1
+const DEFAULT_LAYOUT = {
+  frameTop: 20,
+  frameScale: 100,
+  logoSize: 315,
+  logoX: -50,
+  logoY: -100,
+  titleX: -40,
+  titleAlign: 0,
+  panelGap: 16,
+  rotationWidth: 194,
+  matchWidth: 409,
+  resultsWidth: 228,
+  fontSize: 104,
+};
+
+// Contrôles disponibles pour le layout editor
+const LAYOUT_CONTROLS = [
+  { key: 'frameTop', label: 'Position Y', min: 0, max: 20, unit: 'vh', group: 'Cadre' },
+  { key: 'frameScale', label: 'Échelle', min: 70, max: 110, unit: '%', group: 'Cadre' },
+  { key: 'logoSize', label: 'Taille', min: 80, max: 350, unit: 'px', group: 'Logo' },
+  { key: 'logoX', label: 'Position X', min: -50, max: 200, unit: 'px', group: 'Logo' },
+  { key: 'logoY', label: 'Position Y', min: -100, max: 100, unit: 'px', group: 'Logo' },
+  { key: 'titleX', label: 'Décalage X', min: -300, max: 200, unit: 'px', group: 'Titre' },
+  { key: 'titleAlign', label: 'Alignement', min: 0, max: 100, step: 50, unit: '%', group: 'Titre' },
+  { key: 'panelGap', label: 'Espacement', min: 10, max: 40, unit: 'px', group: 'Panels' },
+  { key: 'rotationWidth', label: 'Rotation', min: 150, max: 300, unit: 'px', group: 'Panels' },
+  { key: 'matchWidth', label: 'Match', min: 300, max: 500, unit: 'px', group: 'Panels' },
+  { key: 'resultsWidth', label: 'Résultats', min: 180, max: 300, unit: 'px', group: 'Panels' },
+  { key: 'fontSize', label: 'Taille texte', min: 80, max: 120, unit: '%', group: 'Texte' },
+];
 
 const OneVsOne = () => {
   const [player1, setPlayer1] = useState(null);
@@ -10,13 +44,24 @@ const OneVsOne = () => {
   const [winner, setWinner] = useState(null);
   const [lastMatch, setLastMatch] = useState(null);
   const [mainPlayers, setMainPlayers] = useState(getMainPlayers());
+  const [pointsConfig, setPointsConfig] = useState(getPointsSystem()['1v1']);
+  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
   const { playSound } = useAudio();
+  const { tournament, isActive: isTournamentActive } = useTournament();
+  const navigate = useNavigate();
 
-  // Recharger les joueurs quand ils changent
+  // Recharger les joueurs et la config quand ils changent
   useEffect(() => {
-    const handleUpdate = () => setMainPlayers(getMainPlayers());
+    const handleUpdate = () => {
+      setMainPlayers(getMainPlayers());
+      setPointsConfig(getPointsSystem()['1v1']);
+    };
     window.addEventListener('playersUpdate', handleUpdate);
-    return () => window.removeEventListener('playersUpdate', handleUpdate);
+    window.addEventListener('settingsUpdate', handleUpdate);
+    return () => {
+      window.removeEventListener('playersUpdate', handleUpdate);
+      window.removeEventListener('settingsUpdate', handleUpdate);
+    };
   }, []);
 
   const matches = getMatchesByType('1v1');
@@ -40,6 +85,31 @@ const OneVsOne = () => {
 
   const notPlayed = matchups.filter(m => m.played === 0);
   const playedCount = matchups.filter(m => m.played > 0).length;
+  const allRotationsComplete = notPlayed.length === 0 && matchups.length > 0;
+
+  // Déterminer le mode suivant dans le tournoi
+  const getNextMode = () => {
+    if (!isTournamentActive || !tournament.modes) return null;
+    const currentIndex = tournament.modes.indexOf('1v1');
+    if (currentIndex === -1 || currentIndex >= tournament.modes.length - 1) return null;
+    return tournament.modes[currentIndex + 1];
+  };
+
+  const nextMode = getNextMode();
+  const modeRoutes = {
+    '1v1': '/1v1',
+    'ffa': '/ffa',
+    'team_ff': '/team-ff',
+    'team_noff': '/team-noff',
+    'casual': '/casual'
+  };
+  const modeNames = {
+    '1v1': '1 vs 1',
+    'ffa': 'Free For All',
+    'team_ff': '2v2 Friendly Fire',
+    'team_noff': '2v2 Team',
+    'casual': 'Casual'
+  };
 
   // Calculer les stats head-to-head
   const h2h = useMemo(() => {
@@ -96,8 +166,8 @@ const OneVsOne = () => {
       loser,
       winners: [winner],
       losers: [loser],
-      winPoints: 3,
-      losePoints: 0,
+      winPoints: pointsConfig.win,
+      losePoints: pointsConfig.lose,
     });
 
     setLastMatch(match);
@@ -106,7 +176,7 @@ const OneVsOne = () => {
     setWinner(null);
 
     window.dispatchEvent(new Event('scoreUpdate'));
-  }, [player1, player2, winner, isReady, playSound]);
+  }, [player1, player2, winner, isReady, playSound, pointsConfig]);
 
   const handleUndo = () => {
     const undone = undoLastMatch();
@@ -134,13 +204,46 @@ const OneVsOne = () => {
   // 5 derniers matchs
   const recentMatches = matches.slice(0, 5);
 
+  // Styles dynamiques basés sur le layout
+  const dynamicStyles = {
+    frame: {
+      transform: `scale(${layout.frameScale / 100})`,
+      marginTop: `${layout.frameTop}vh`,
+      transformOrigin: 'top center',
+    },
+    logoContainer: {
+      left: `${layout.logoX}px`,
+      transform: `translateY(calc(-50% + ${layout.logoY}px))`,
+    },
+    logo: {
+      height: `${layout.logoSize}px`,
+    },
+    title: {
+      marginLeft: `${layout.titleX}px`,
+      textAlign: layout.titleAlign === 0 ? 'left' : layout.titleAlign === 100 ? 'right' : 'center',
+    },
+    header: {
+      paddingLeft: `${layout.logoX + layout.logoSize + 20}px`,
+    },
+    container: { gap: `${layout.panelGap}px`, fontSize: `${layout.fontSize}%` },
+    rotation: { width: `${layout.rotationWidth}px` },
+    match: { width: `${layout.matchWidth}px` },
+    results: { width: `${layout.resultsWidth}px` },
+  };
+
   return (
     <div className="home-page">
-      <div className="melee-main-frame dashboard-frame">
-        {/* Header */}
-        <div className="melee-header">
-          <h1 className="melee-logo">1 vs 1</h1>
-          <div className="melee-header-line" />
+      <div className="melee-main-frame dashboard-frame" style={dynamicStyles.frame}>
+        {/* Header avec Logo style menu principal */}
+        <div className="subpage-header" style={dynamicStyles.header}>
+          <div className="subpage-logo-container" style={dynamicStyles.logoContainer}>
+            <img src="/logo.png" alt="BFSA" className="subpage-logo" style={dynamicStyles.logo} />
+            <div className="subpage-logo-glow"></div>
+          </div>
+          <div className="subpage-title" style={dynamicStyles.title}>
+            <h1>1 VS 1</h1>
+            <span className="mode-subtitle">Duels en tête-à-tête</span>
+          </div>
         </div>
 
         {/* Dashboard Layout - 3 colonnes */}
@@ -254,7 +357,7 @@ const OneVsOne = () => {
                     style={{ '--player-color': getPlayer(player1).color }}
                   >
                     <span className="winner-name">{getPlayer(player1).name}</span>
-                    <span className="winner-pts">+3 pts</span>
+                    <span className="winner-pts">+{pointsConfig.win} pts</span>
                   </button>
                   <button
                     className={`winner-opt ${winner === player2 ? 'selected' : ''}`}
@@ -262,7 +365,7 @@ const OneVsOne = () => {
                     style={{ '--player-color': getPlayer(player2).color }}
                   >
                     <span className="winner-name">{getPlayer(player2).name}</span>
-                    <span className="winner-pts">+3 pts</span>
+                    <span className="winner-pts">+{pointsConfig.win} pts</span>
                   </button>
                 </div>
               </div>
@@ -287,31 +390,25 @@ const OneVsOne = () => {
 
           {/* COLONNE DROITE - Resultats + H2H */}
           <div className="dashboard-panel results-panel">
-            {/* Dernier match + Undo */}
-            {lastMatch && (
-              <div className="last-match-alert">
-                <span className="alert-winner" style={{ color: getPlayer(lastMatch.winner)?.color }}>
-                  {getPlayer(lastMatch.winner)?.name}
-                </span>
-                <span className="alert-text">gagne !</span>
-                <button className="undo-btn" onClick={handleUndo}>Annuler</button>
-              </div>
-            )}
-
             <div className="panel-header">
               <span className="panel-title">Historique</span>
               <span className="panel-badge">{matches.length}</span>
+              {matches.length > 0 && (
+                <button className="edit-results-btn" onClick={handleUndo} title="Annuler le dernier match">
+                  ↩
+                </button>
+              )}
             </div>
 
             {recentMatches.length > 0 ? (
               <div className="recent-list">
                 {recentMatches.map((match, idx) => (
                   <div key={match.id} className="recent-item">
-                    <span className="recent-winner" style={{ color: getPlayer(match.winner)?.color }}>
+                    <span className="recent-winner" style={{ color: '#50ff90' }}>
                       {getPlayer(match.winner)?.name}
                     </span>
                     <span className="recent-vs">vs</span>
-                    <span className="recent-loser">
+                    <span className="recent-loser" style={{ color: '#ff6b6b' }}>
                       {getPlayer(match.loser)?.name}
                     </span>
                   </div>
@@ -362,10 +459,49 @@ const OneVsOne = () => {
         </div>
       </div>
 
+      {/* Bouton Mode Suivant - apparaît quand toutes les rotations sont terminées */}
+      {allRotationsComplete && isTournamentActive && (
+        <div className="next-mode-container">
+          {nextMode ? (
+            <button
+              className="next-mode-btn"
+              onClick={() => {
+                playSound('confirm');
+                navigate(modeRoutes[nextMode]);
+              }}
+            >
+              <span className="next-mode-label">Mode suivant</span>
+              <span className="next-mode-name">{modeNames[nextMode]}</span>
+              <span className="next-mode-arrow">→</span>
+            </button>
+          ) : (
+            <button
+              className="next-mode-btn results"
+              onClick={() => {
+                playSound('confirm');
+                navigate('/leaderboard');
+              }}
+            >
+              <span className="next-mode-label">Tournoi terminé !</span>
+              <span className="next-mode-name">Voir les résultats</span>
+              <span className="next-mode-arrow">🏆</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Bouton retour */}
       <Link to="/" className="back-btn">
         &larr; Menu
       </Link>
+
+      {/* Layout Editor (mode dev) */}
+      <LayoutEditor
+        pageKey="1v1"
+        defaultLayout={DEFAULT_LAYOUT}
+        controls={LAYOUT_CONTROLS}
+        onLayoutChange={setLayout}
+      />
     </div>
   );
 };
