@@ -1,21 +1,14 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { useAudio } from '../hooks/useAudio';
+import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import { useModal } from '../components/Modal';
 import { getMatchesByType, getLeaderboard } from '../data/storage';
 import { getPlayer, getMainPlayers } from '../data/players';
 
 const Home = () => {
-  const { playSound, playMusic, toggleSound, toggleMusic, soundEnabled, musicEnabled } = useAudio();
+  const { playSound, toggleSound, toggleMusic, soundEnabled, musicEnabled } = useAudio();
   const { showConfirm, showAlert } = useModal();
-
-  // Lancer la musique du menu au chargement
-  useEffect(() => {
-    if (musicEnabled) {
-      playMusic('menu');
-    }
-  }, []);
   const { tournament, isActive, endTournament } = useTournament();
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
@@ -448,18 +441,18 @@ const Home = () => {
       {/* Contrôles audio */}
       <div className="audio-controls">
         <button
-          className="audio-btn"
+          className={`audio-btn ${!soundEnabled ? 'off' : ''}`}
           onClick={toggleSound}
           title={soundEnabled ? 'Désactiver les sons' : 'Activer les sons'}
         >
           {soundEnabled ? '🔊' : '🔇'}
         </button>
         <button
-          className="audio-btn"
+          className={`audio-btn ${!musicEnabled ? 'off' : ''}`}
           onClick={toggleMusic}
           title={musicEnabled ? 'Désactiver la musique' : 'Activer la musique'}
         >
-          {musicEnabled ? '🎵' : '🎶'}
+          {musicEnabled ? '🎵' : '🔕'}
         </button>
       </div>
 

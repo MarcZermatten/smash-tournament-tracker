@@ -9,8 +9,13 @@ const DEFAULT_TOURNAMENT = {
   active: false,
   name: '',
   players: [], // IDs des joueurs participants
-  modes: ['1v1', 'ffa', 'team_ff'], // Modes actifs
+  modes: ['1v1', 'ffa', 'team_ff', 'team_noff'], // Modes actifs
   startedAt: null,
+  // Suivi du mode Casual (nécessite FF ON et FF OFF)
+  casualProgress: {
+    ffOn: [],   // Liste des VIP qui ont joué en FF ON
+    ffOff: [],  // Liste des VIP qui ont joué en FF OFF
+  },
 };
 
 export const TournamentProvider = ({ children }) => {
@@ -95,6 +100,67 @@ export const TournamentProvider = ({ children }) => {
     return tournament.players;
   }, [tournament]);
 
+  // === Fonctions pour le mode Casual (2v3 Protège le Noob) ===
+
+  // Enregistrer qu'un VIP a joué un match en mode FF ON ou FF OFF
+  const recordCasualMatch = useCallback((vipId, isFfOn) => {
+    if (!tournament.active || !tournament.modes.includes('casual')) return;
+
+    setTournament(prev => {
+      const progress = prev.casualProgress || { ffOn: [], ffOff: [] };
+      const listKey = isFfOn ? 'ffOn' : 'ffOff';
+
+      // Ne pas ajouter si déjà présent
+      if (progress[listKey].includes(vipId)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        casualProgress: {
+          ...progress,
+          [listKey]: [...progress[listKey], vipId],
+        },
+      };
+    });
+  }, [tournament.active, tournament.modes]);
+
+  // Obtenir la progression du mode Casual
+  const getCasualProgress = useCallback(() => {
+    if (!tournament.active) return null;
+
+    const progress = tournament.casualProgress || { ffOn: [], ffOff: [] };
+    const players = tournament.players || [];
+
+    return {
+      ffOn: progress.ffOn,
+      ffOff: progress.ffOff,
+      totalPlayers: players.length,
+      ffOnComplete: players.every(p => progress.ffOn.includes(p)),
+      ffOffComplete: players.every(p => progress.ffOff.includes(p)),
+      isComplete: players.every(p => progress.ffOn.includes(p) && progress.ffOff.includes(p)),
+    };
+  }, [tournament]);
+
+  // Vérifier si le mode Casual est complet
+  const isCasualComplete = useCallback(() => {
+    const progress = getCasualProgress();
+    return progress ? progress.isComplete : false;
+  }, [getCasualProgress]);
+
+  // Obtenir les VIP manquants pour compléter le mode Casual
+  const getMissingCasualVips = useCallback(() => {
+    if (!tournament.active) return { ffOn: [], ffOff: [] };
+
+    const progress = tournament.casualProgress || { ffOn: [], ffOff: [] };
+    const players = tournament.players || [];
+
+    return {
+      ffOn: players.filter(p => !progress.ffOn.includes(p)),
+      ffOff: players.filter(p => !progress.ffOff.includes(p)),
+    };
+  }, [tournament]);
+
   const value = {
     tournament,
     isActive: tournament.active,
@@ -106,6 +172,11 @@ export const TournamentProvider = ({ children }) => {
     isPlayerInTournament,
     isModeActive,
     getTournamentPlayers,
+    // Fonctions Casual
+    recordCasualMatch,
+    getCasualProgress,
+    isCasualComplete,
+    getMissingCasualVips,
   };
 
   return (

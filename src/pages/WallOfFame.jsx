@@ -2,14 +2,63 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getTournamentHistory, deleteTournament } from '../data/storage';
 import { getPlayer } from '../data/players';
-import { useAudio } from '../hooks/useAudio';
+import { useAudio } from '../context/AudioContext';
 import { useModal } from '../components/Modal';
+import LayoutEditor from '../components/LayoutEditor';
+
+// Configuration par défaut du layout Wall of Fame
+const DEFAULT_LAYOUT = {
+  frameTop: 16,
+  frameScale: 104,
+  logoSize: 315,
+  logoX: -50,
+  logoY: -100,
+  titleX: -40,
+  titleAlign: 0,
+  fontSize: 104,
+};
+
+const LAYOUT_CONTROLS = [
+  { key: 'frameTop', label: 'Position Y', min: 0, max: 20, unit: 'vh', group: 'Cadre' },
+  { key: 'frameScale', label: 'Échelle', min: 70, max: 110, unit: '%', group: 'Cadre' },
+  { key: 'logoSize', label: 'Taille', min: 80, max: 350, unit: 'px', group: 'Logo' },
+  { key: 'logoX', label: 'Position X', min: -50, max: 200, unit: 'px', group: 'Logo' },
+  { key: 'logoY', label: 'Position Y', min: -100, max: 100, unit: 'px', group: 'Logo' },
+  { key: 'titleX', label: 'Décalage X', min: -300, max: 200, unit: 'px', group: 'Titre' },
+  { key: 'titleAlign', label: 'Alignement', min: 0, max: 100, step: 50, unit: '%', group: 'Titre' },
+  { key: 'fontSize', label: 'Taille texte', min: 80, max: 120, unit: '%', group: 'Texte' },
+];
 
 const WallOfFame = () => {
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState(null);
   const { playSound } = useAudio();
   const { showConfirm } = useModal();
+  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
+
+  // Styles dynamiques basés sur le layout
+  const dynamicStyles = {
+    frame: {
+      transform: `scale(${layout.frameScale / 100})`,
+      marginTop: `${layout.frameTop}vh`,
+      transformOrigin: 'top center',
+      fontSize: `${layout.fontSize}%`,
+    },
+    logoContainer: {
+      left: `${layout.logoX}px`,
+      transform: `translateY(calc(-50% + ${layout.logoY}px))`,
+    },
+    logo: {
+      height: `${layout.logoSize}px`,
+    },
+    title: {
+      marginLeft: `${layout.titleX}px`,
+      textAlign: layout.titleAlign === 0 ? 'left' : layout.titleAlign === 100 ? 'right' : 'center',
+    },
+    header: {
+      paddingLeft: `${layout.logoX + layout.logoSize + 20}px`,
+    },
+  };
 
   useEffect(() => {
     setTournaments(getTournamentHistory());
@@ -220,10 +269,17 @@ const WallOfFame = () => {
 
   return (
     <div className="home-page">
-      <div className="melee-main-frame dashboard-frame" style={{ maxWidth: '800px' }}>
-        <div className="melee-header">
-          <h1 className="melee-logo">Wall of Fame</h1>
-          <div className="melee-header-line" />
+      <div className="melee-main-frame dashboard-frame" style={{ ...dynamicStyles.frame, maxWidth: '800px' }}>
+        {/* Header avec Logo style menu principal */}
+        <div className="subpage-header" style={dynamicStyles.header}>
+          <div className="subpage-logo-container" style={dynamicStyles.logoContainer}>
+            <img src="/logo.png" alt="BFSA" className="subpage-logo" style={dynamicStyles.logo} />
+            <div className="subpage-logo-glow"></div>
+          </div>
+          <div className="subpage-title" style={dynamicStyles.title}>
+            <h1>WALL OF FAME</h1>
+            <span className="mode-subtitle">Historique des tournois</span>
+          </div>
         </div>
 
         {/* Top 3 des vainqueurs */}
@@ -392,6 +448,14 @@ const WallOfFame = () => {
       <Link to="/" className="back-btn">
         ← Menu
       </Link>
+
+      {/* Layout Editor (mode dev) */}
+      <LayoutEditor
+        pageKey="walloffame"
+        defaultLayout={DEFAULT_LAYOUT}
+        controls={LAYOUT_CONTROLS}
+        onLayoutChange={setLayout}
+      />
 
       {renderTournamentModal()}
 

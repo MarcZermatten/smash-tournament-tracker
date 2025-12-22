@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getMainPlayers, getPlayer, getPointsSystem } from '../data/players';
 import { addMatch, getMatchesByType, undoLastMatch, getMatchConfig } from '../data/storage';
-import { useAudio } from '../hooks/useAudio';
+import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
 

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { getLeaderboard, getPlayerStats } from '../data/storage';
 import { getPlayer } from '../data/players';
 import { useTournament } from '../context/TournamentContext';
-import { useAudio } from '../hooks/useAudio';
+import { useAudio } from '../context/AudioContext';
 
 const LeaderboardPage = () => {
   const [leaderboard, setLeaderboard] = useState([]);

@@ -5,7 +5,7 @@ import {
   setPlayerImage, COLORS, AVATARS, getAvatar
 } from '../data/players';
 import { useTournament } from '../context/TournamentContext';
-import { useAudio } from '../hooks/useAudio';
+import { useAudio } from '../context/AudioContext';
 import { useModal } from '../components/Modal';
 
 const TournamentSetup = () => {
@@ -17,7 +17,7 @@ const TournamentSetup = () => {
   const [step, setStep] = useState(1); // 1: joueurs, 2: modes, 3: confirmation
   const [players, setPlayers] = useState({});
   const [selectedPlayers, setSelectedPlayers] = useState([]);
-  const [selectedModes, setSelectedModes] = useState(['1v1', 'ffa', 'team_ff']);
+  const [selectedModes, setSelectedModes] = useState(['1v1', 'ffa', 'team_ff', 'team_noff']);
   const [tournamentName, setTournamentName] = useState('');
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [newPlayerName, setNewPlayerName] = useState('');
@@ -46,8 +46,8 @@ const TournamentSetup = () => {
     { id: '1v1', name: '1 vs 1', icon: '⚔️', desc: 'Duels classiques' },
     { id: 'ffa', name: 'Free For All', icon: '🎯', desc: '4 joueurs' },
     { id: 'team_ff', name: '2v2 FF', icon: '🔥', desc: 'Équipes avec friendly fire' },
-    { id: 'team_noff', name: '2v2 No FF', icon: '🤝', desc: 'Équipes sans friendly fire' },
-    { id: 'casual', name: 'Casual', icon: '🎉', desc: 'Parties détendues' },
+    { id: 'team_noff', name: '2v2 Team', icon: '🤝', desc: 'Équipes sans friendly fire' },
+    { id: 'casual', name: 'Casual', icon: '👶', desc: '2v3 Protège le Noob (FF ON + FF OFF)' },
   ];
 
   const togglePlayer = (playerId) => {

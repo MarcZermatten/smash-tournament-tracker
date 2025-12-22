@@ -14,7 +14,7 @@ import {
   COLORS,
   SSBU_CHARACTERS
 } from '../data/players';
-import { useAudio } from '../hooks/useAudio';
+import { useAudio } from '../context/AudioContext';
 import { useModal } from '../components/Modal';
 import LayoutEditor from '../components/LayoutEditor';
 

@@ -68,9 +68,13 @@ export const addMatch = (match) => {
   data.matches.push(newMatch);
 
   // Mettre à jour les stats
-  if (match.type === 'ffa') {
+  if (match.type === 'ffa' || match.type === 'casual') {
+    // FFA et Casual utilisent le format results avec points par joueur
     match.results.forEach(result => {
-      data.stats[result.player].ffa += result.points;
+      const statKey = match.type === 'casual' ? 'casual' : 'ffa';
+      if (data.stats[result.player]) {
+        data.stats[result.player][statKey] = (data.stats[result.player][statKey] || 0) + result.points;
+      }
     });
   } else {
     match.winners.forEach(player => {
@@ -92,9 +96,12 @@ export const undoLastMatch = () => {
   const lastMatch = data.matches.pop();
 
   // Annuler les stats
-  if (lastMatch.type === 'ffa') {
+  if (lastMatch.type === 'ffa' || lastMatch.type === 'casual') {
     lastMatch.results.forEach(result => {
-      data.stats[result.player].ffa -= result.points;
+      const statKey = lastMatch.type === 'casual' ? 'casual' : 'ffa';
+      if (data.stats[result.player] && data.stats[result.player][statKey]) {
+        data.stats[result.player][statKey] -= result.points;
+      }
     });
   } else {
     lastMatch.winners.forEach(player => {

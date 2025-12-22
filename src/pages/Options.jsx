@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAudio } from '../hooks/useAudio';
+import { useAudio } from '../context/AudioContext';
 import {
   exportData, importData, resetSeason, loadData,
   getPointsConfig, updatePointsConfig,
@@ -11,8 +11,8 @@ import LayoutEditor from '../components/LayoutEditor';
 
 // Configuration par défaut du layout Options
 const DEFAULT_LAYOUT = {
-  frameTop: 15,
-  frameScale: 100,
+  frameTop: 13,
+  frameScale: 96,
   logoSize: 315,
   logoX: -50,
   logoY: -100,
@@ -33,7 +33,12 @@ const LAYOUT_CONTROLS = [
 ];
 
 const Options = () => {
-  const { soundEnabled, musicEnabled, volume, toggleSound, toggleMusic, changeVolume } = useAudio();
+  const {
+    soundEnabled, musicEnabled, volume,
+    toggleSound, toggleMusic, changeVolume,
+    currentTrack, playlist, isPlaying,
+    togglePlayPause, nextTrack, selectTrack
+  } = useAudio();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [importStatus, setImportStatus] = useState(null);
   const [activeTab, setActiveTab] = useState('points'); // points, matchs, audio, data
@@ -165,6 +170,7 @@ const Options = () => {
     { id: 'matchs', label: 'Matchs', icon: '🎮' },
     { id: 'audio', label: 'Audio', icon: '🔊' },
     { id: 'data', label: 'Données', icon: '💾' },
+    { id: 'about', label: 'À propos', icon: 'ℹ️' },
   ];
 
   return (
@@ -322,9 +328,11 @@ const Options = () => {
                 </div>
               </div>
 
-              <button className="reset-points-btn" onClick={resetPointsToDefault}>
-                Réinitialiser les points par défaut
-              </button>
+              <div className="reset-btn-container">
+                <button className="reset-points-btn" onClick={resetPointsToDefault}>
+                  Réinitialiser les points par défaut
+                </button>
+              </div>
             </div>
           )}
 
@@ -472,9 +480,75 @@ const Options = () => {
                 </div>
               </div>
 
-              <div className="audio-note">
-                <p>Les fichiers audio seront ajoutés prochainement !</p>
-              </div>
+              {/* Contrôles musique */}
+              {musicEnabled && (
+                <div className="music-controls">
+                  {/* Piste en cours */}
+                  <div className="now-playing">
+                    <div className="now-playing-info">
+                      <span className="now-playing-label">En lecture</span>
+                      <span className="now-playing-track">
+                        {currentTrack ? currentTrack.name : 'Aucune piste'}
+                      </span>
+                    </div>
+                    <div className="music-buttons">
+                      <button
+                        className="music-btn"
+                        onClick={togglePlayPause}
+                        title={isPlaying ? 'Pause' : 'Play'}
+                      >
+                        {isPlaying ? '⏸' : '▶'}
+                      </button>
+                      <button
+                        className="music-btn"
+                        onClick={nextTrack}
+                        title="Piste suivante"
+                      >
+                        ⏭
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Liste des pistes par catégorie */}
+                  <div className="track-list">
+                    {['Menu', 'Zelda', 'Mario', 'Kirby', 'Stage', 'Character', 'Misc'].map(category => {
+                      const categoryTracks = playlist.filter(t => t.category === category);
+                      if (categoryTracks.length === 0) return null;
+                      return (
+                        <div key={category} className="track-category">
+                          <div className="category-header">
+                            {category === 'Menu' && '🎮 Menu'}
+                            {category === 'Zelda' && '🗡️ Zelda'}
+                            {category === 'Mario' && '🍄 Mario'}
+                            {category === 'Kirby' && '⭐ Kirby'}
+                            {category === 'Stage' && '🏟️ Stages'}
+                            {category === 'Character' && '👤 Personnages'}
+                            {category === 'Misc' && '🎵 Divers'}
+                          </div>
+                          <div className="category-tracks">
+                            {categoryTracks.map(track => (
+                              <button
+                                key={track.id}
+                                className={`track-btn ${currentTrack?.id === track.id ? 'playing' : ''}`}
+                                onClick={() => selectTrack(track.id)}
+                              >
+                                <span className="track-name">{track.name}</span>
+                                {currentTrack?.id === track.id && isPlaying && (
+                                  <span className="track-playing">♪</span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <p className="track-hint">
+                    💡 Ajoute tes propres MP3 dans <code>public/audio/</code>
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -548,13 +622,38 @@ const Options = () => {
               </div>
             </div>
           )}
+
+          {/* À PROPOS */}
+          {activeTab === 'about' && (
+            <div className="about-section">
+              <div className="about-logo">
+                <img src="/logo.png" alt="BFSA" />
+              </div>
+              <h2 className="about-title">BFSA Ultimate Legacy</h2>
+              <p className="about-version">Version 1.0</p>
+
+              <div className="about-description">
+                <p>Tracker de tournois Super Smash Bros Ultimate pour les soirées entre amis.</p>
+              </div>
+
+              <div className="about-credits">
+                <h3>Crédits</h3>
+                <p>Développé par Marc Zermatten, via GeoMind</p>
+              </div>
+
+              <div className="about-features">
+                <h3>Fonctionnalités</h3>
+                <ul>
+                  <li>Mode 1v1, FFA, 2v2</li>
+                  <li>Système de points configurable</li>
+                  <li>Leaderboard en temps réel</li>
+                  <li>Historique des tournois</li>
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Credits */}
-        <div className="credits">
-          <p>BFSA Ultimate Legacy</p>
-          <p className="credits-sub">Fait avec amour pour Marc, Max, Flo, Boris & Daniel</p>
-        </div>
       </div>
 
       <Link to="/" className="back-btn">
@@ -613,6 +712,8 @@ const Options = () => {
           min-height: 350px;
           padding-bottom: 20px;
           margin-bottom: 10px;
+          overflow-y: auto;
+          max-height: 500px;
         }
 
         .config-hint {
@@ -692,16 +793,29 @@ const Options = () => {
           border-color: var(--yellow-selected);
         }
 
+        .reset-btn-container {
+          margin-top: 25px;
+          padding-top: 15px;
+          border-top: 1px solid rgba(100, 150, 200, 0.2);
+        }
+
         .reset-points-btn {
+          display: block;
           width: 100%;
-          padding: 10px;
-          margin-top: 15px;
-          background: rgba(0, 150, 180, 0.2);
-          border: 1px solid var(--cyan-light);
+          padding: 12px;
+          background: rgba(0, 100, 120, 0.4);
+          border: 2px solid var(--cyan);
           border-radius: 6px;
           color: var(--cyan-light);
           cursor: pointer;
           font-family: 'Oswald', sans-serif;
+          font-size: 0.95rem;
+          text-align: center;
+        }
+
+        .reset-points-btn:hover {
+          background: rgba(0, 150, 180, 0.5);
+          border-color: var(--cyan-light);
         }
 
         .match-options {
@@ -998,23 +1112,74 @@ const Options = () => {
           to { opacity: 1; transform: translateY(0); }
         }
 
-        .credits {
+        /* À propos */
+        .about-section {
           text-align: center;
-          padding-top: 20px;
-          border-top: 1px solid rgba(100, 150, 200, 0.2);
-          margin-top: 20px;
+          padding: 20px 0;
         }
 
-        .credits p {
-          color: var(--cyan-light);
+        .about-logo {
+          margin-bottom: 20px;
+        }
+
+        .about-logo img {
+          height: 180px;
+          filter: drop-shadow(0 0 20px rgba(255, 216, 0, 0.3));
+        }
+
+        .about-title {
           font-family: 'Oswald', sans-serif;
+          font-size: 1.8rem;
+          color: var(--yellow-selected);
+          margin: 0 0 5px 0;
+        }
+
+        .about-version {
+          color: rgba(255, 255, 255, 0.5);
+          font-size: 0.9rem;
+          margin: 0 0 25px 0;
+        }
+
+        .about-description {
+          color: var(--cyan-light);
+          margin-bottom: 25px;
+        }
+
+        .about-credits, .about-features {
+          background: rgba(6, 18, 35, 0.7);
+          border: 1px solid rgba(100, 150, 200, 0.2);
+          border-radius: 8px;
+          padding: 15px;
+          margin-bottom: 15px;
+          text-align: left;
+        }
+
+        .about-credits h3, .about-features h3 {
+          font-family: 'Oswald', sans-serif;
+          color: var(--cyan-light);
+          font-size: 1rem;
+          margin: 0 0 10px 0;
+        }
+
+        .about-credits p {
+          color: rgba(255, 255, 255, 0.8);
           margin: 0;
         }
 
-        .credits-sub {
-          font-size: 0.85rem;
-          opacity: 0.5;
-          margin-top: 5px !important;
+        .about-credits .credits-players {
+          margin-top: 8px;
+          font-size: 0.9rem;
+          opacity: 0.7;
+        }
+
+        .about-features ul {
+          margin: 0;
+          padding-left: 20px;
+          color: rgba(255, 255, 255, 0.7);
+        }
+
+        .about-features li {
+          margin-bottom: 5px;
         }
       `}</style>
     </div>

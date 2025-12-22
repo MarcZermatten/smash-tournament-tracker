@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useAudio } from '../hooks/useAudio';
+import { useAudio } from '../context/AudioContext';
 
 const MenuButton = ({ to, icon, children, onClick, selected, disabled, style }) => {
   const { playSound } = useAudio();

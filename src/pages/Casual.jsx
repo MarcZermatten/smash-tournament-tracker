@@ -1,14 +1,14 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAllPlayers, getPlayer, POINTS_SYSTEM } from '../data/players';
+import { getMainPlayers, getPlayer } from '../data/players';
 import { addMatch, getMatchesByType, undoLastMatch } from '../data/storage';
-import { useAudio } from '../hooks/useAudio';
+import { useAudio } from '../context/AudioContext';
 import LayoutEditor from '../components/LayoutEditor';
 
 // Configuration par défaut du layout Casual
 const DEFAULT_LAYOUT = {
-  frameTop: 20,
-  frameScale: 100,
+  frameTop: 13,
+  frameScale: 96,
   logoSize: 315,
   logoX: -50,
   logoY: -100,
@@ -28,84 +28,126 @@ const LAYOUT_CONTROLS = [
   { key: 'fontSize', label: 'Taille texte', min: 80, max: 120, unit: '%', group: 'Texte' },
 ];
 
+// Points pour le mode Casual 2v3
+const POINTS = {
+  protectors_win: 3,   // Points pour les protecteurs si le VIP survit
+  vip_win: 2,          // Points pour le VIP s'il survit
+  hunters_win: 3,      // Points pour les chasseurs s'ils tuent le VIP
+  vip_lose: 0,         // Points pour le VIP s'il meurt
+};
+
 const Casual = () => {
-  const [selectedPlayers, setSelectedPlayers] = useState([]);
-  const [rankings, setRankings] = useState({});
+  const [players, setPlayers] = useState([]);
+  const [vip, setVip] = useState(null);           // Le joueur à protéger
+  const [protectors, setProtectors] = useState([]); // Les 2 protecteurs
+  const [hunters, setHunters] = useState([]);      // Les 2 chasseurs
+  const [friendlyFire, setFriendlyFire] = useState(true);
+  const [winner, setWinner] = useState(null);      // 'protectors' ou 'hunters'
   const [lastMatch, setLastMatch] = useState(null);
-  const [allPlayers, setAllPlayers] = useState(getAllPlayers());
   const [layout, setLayout] = useState(DEFAULT_LAYOUT);
   const { playSound } = useAudio();
 
-  const config = POINTS_SYSTEM.casual;
-
   useEffect(() => {
-    const handleUpdate = () => setAllPlayers(getAllPlayers());
+    setPlayers(getMainPlayers());
+    const handleUpdate = () => setPlayers(getMainPlayers());
     window.addEventListener('playersUpdate', handleUpdate);
     return () => window.removeEventListener('playersUpdate', handleUpdate);
   }, []);
 
   const matches = getMatchesByType('casual');
 
-  const togglePlayer = (playerId) => {
-    playSound('select');
-    if (selectedPlayers.includes(playerId)) {
-      setSelectedPlayers(selectedPlayers.filter(p => p !== playerId));
-      setRankings(prev => {
-        const newRankings = { ...prev };
-        delete newRankings[playerId];
-        return newRankings;
-      });
-    } else if (selectedPlayers.length < 8) {
-      setSelectedPlayers([...selectedPlayers, playerId]);
+  // Reset la sélection
+  const resetSelection = () => {
+    setVip(null);
+    setProtectors([]);
+    setHunters([]);
+    setWinner(null);
+    playSound('cancel');
+  };
+
+  // Sélectionner le VIP
+  const selectVip = (playerId) => {
+    if (vip === playerId) {
+      setVip(null);
+      // Réassigner aux disponibles
+    } else {
+      setVip(playerId);
+      // Retirer des autres rôles si présent
+      setProtectors(prev => prev.filter(p => p !== playerId));
+      setHunters(prev => prev.filter(p => p !== playerId));
     }
-  };
-
-  const handlePositionSelect = (playerId, position) => {
     playSound('select');
-    const currentHolder = Object.entries(rankings).find(([_, pos]) => pos === position)?.[0];
-
-    setRankings(prev => {
-      const newRankings = { ...prev };
-      if (currentHolder && currentHolder !== playerId) {
-        delete newRankings[currentHolder];
-      }
-      newRankings[playerId] = position;
-      return newRankings;
-    });
   };
 
-  const getPointsForPosition = (position, totalPlayers) => {
-    const maxPoints = totalPlayers;
-    return Math.max(0, maxPoints - position + 1);
+  // Ajouter/retirer un protecteur
+  const toggleProtector = (playerId) => {
+    if (playerId === vip) return;
+    if (protectors.includes(playerId)) {
+      setProtectors(prev => prev.filter(p => p !== playerId));
+    } else if (protectors.length < 2) {
+      setProtectors(prev => [...prev, playerId]);
+      setHunters(prev => prev.filter(p => p !== playerId));
+    }
+    playSound('select');
   };
 
-  const isComplete = selectedPlayers.length >= 2 &&
-    Object.keys(rankings).length === selectedPlayers.length;
+  // Ajouter/retirer un chasseur
+  const toggleHunter = (playerId) => {
+    if (playerId === vip) return;
+    if (hunters.includes(playerId)) {
+      setHunters(prev => prev.filter(p => p !== playerId));
+    } else if (hunters.length < 2) {
+      setHunters(prev => [...prev, playerId]);
+      setProtectors(prev => prev.filter(p => p !== playerId));
+    }
+    playSound('select');
+  };
 
+  // Vérifier si la config est complète
+  const isConfigComplete = vip && protectors.length === 2 && hunters.length === 2;
+
+  // Sélectionner le gagnant
+  const selectWinner = (team) => {
+    setWinner(team);
+    playSound('select');
+  };
+
+  // Valider le match
   const handleSubmit = useCallback(() => {
-    if (!isComplete) return;
+    if (!isConfigComplete || !winner) return;
     playSound('confirm');
 
-    const totalPlayers = selectedPlayers.length;
-    const results = Object.entries(rankings).map(([player, position]) => ({
-      player,
-      position,
-      points: getPointsForPosition(position, totalPlayers)
-    }));
+    const results = [];
+
+    if (winner === 'protectors') {
+      // L'équipe de protection gagne
+      results.push({ player: vip, points: POINTS.vip_win, role: 'vip', win: true });
+      protectors.forEach(p => results.push({ player: p, points: POINTS.protectors_win, role: 'protector', win: true }));
+      hunters.forEach(p => results.push({ player: p, points: 0, role: 'hunter', win: false }));
+    } else {
+      // Les chasseurs gagnent
+      results.push({ player: vip, points: POINTS.vip_lose, role: 'vip', win: false });
+      protectors.forEach(p => results.push({ player: p, points: 0, role: 'protector', win: false }));
+      hunters.forEach(p => results.push({ player: p, points: POINTS.hunters_win, role: 'hunter', win: true }));
+    }
 
     const match = addMatch({
       type: 'casual',
+      subtype: '2v3',
+      vip,
+      protectors,
+      hunters,
+      winner,
+      friendlyFire,
       results,
-      playerCount: totalPlayers,
     });
 
     setLastMatch(match);
-    setRankings({});
-    setSelectedPlayers([]);
-
+    resetSelection();
     window.dispatchEvent(new Event('scoreUpdate'));
-  }, [rankings, selectedPlayers, isComplete, playSound]);
+  }, [vip, protectors, hunters, winner, friendlyFire, isConfigComplete, playSound]);
 
+  // Annuler le dernier match
   const handleUndo = () => {
     const undone = undoLastMatch();
     if (undone) {
@@ -115,32 +157,25 @@ const Casual = () => {
     }
   };
 
-  const clearSelection = () => {
-    setSelectedPlayers([]);
-    setRankings({});
-    playSound('cancel');
-  };
-
   // Stats par joueur
-  const playerStats = allPlayers.reduce((acc, playerId) => {
+  const playerStats = players.reduce((acc, playerId) => {
     const playerMatches = matches.filter(m =>
       m.results?.some(r => r.player === playerId)
     );
     const wins = playerMatches.filter(m =>
-      m.results?.find(r => r.player === playerId)?.position === 1
+      m.results?.find(r => r.player === playerId)?.win
     ).length;
+    const vipCount = playerMatches.filter(m => m.vip === playerId).length;
     const totalPoints = playerMatches.reduce((sum, m) => {
       const result = m.results?.find(r => r.player === playerId);
       return sum + (result?.points || 0);
     }, 0);
 
-    acc[playerId] = { matches: playerMatches.length, wins, totalPoints };
+    acc[playerId] = { matches: playerMatches.length, wins, vipCount, totalPoints };
     return acc;
   }, {});
 
-  const recentMatches = matches.slice(0, 5);
-
-  // Styles dynamiques basés sur le layout
+  // Styles dynamiques
   const dynamicStyles = {
     frame: {
       transform: `scale(${layout.frameScale / 100})`,
@@ -164,10 +199,15 @@ const Casual = () => {
     },
   };
 
+  // Joueurs disponibles (pas encore assignés)
+  const availablePlayers = players.filter(p =>
+    p !== vip && !protectors.includes(p) && !hunters.includes(p)
+  );
+
   return (
     <div className="home-page">
       <div className="melee-main-frame dashboard-frame" style={dynamicStyles.frame}>
-        {/* Header avec Logo style menu principal */}
+        {/* Header */}
         <div className="subpage-header" style={dynamicStyles.header}>
           <div className="subpage-logo-container" style={dynamicStyles.logoContainer}>
             <img src="/logo.png" alt="BFSA" className="subpage-logo" style={dynamicStyles.logo} />
@@ -175,264 +215,695 @@ const Casual = () => {
           </div>
           <div className="subpage-title" style={dynamicStyles.title}>
             <h1>CASUAL</h1>
-            <span className="mode-subtitle">Parties détendues</span>
+            <span className="mode-subtitle">2v3 - Protège le Noob</span>
           </div>
         </div>
 
-        {/* Dashboard Layout - 3 colonnes */}
-        <div className="dashboard-container">
-          {/* COLONNE GAUCHE - Sélection joueurs */}
-          <div className="dashboard-panel rotation-panel">
-            <div className="panel-header">
-              <span className="panel-title">Joueurs</span>
-              <span className="panel-badge">{selectedPlayers.length}/8</span>
-            </div>
+        {/* Config FF */}
+        <div className="ff-toggle">
+          <button
+            className={`ff-btn ${friendlyFire ? 'active' : ''}`}
+            onClick={() => setFriendlyFire(true)}
+          >
+            🔥 FF ON
+          </button>
+          <button
+            className={`ff-btn ${!friendlyFire ? 'active' : ''}`}
+            onClick={() => setFriendlyFire(false)}
+          >
+            🛡️ FF OFF
+          </button>
+        </div>
 
-            <div className="matchup-list">
-              {allPlayers.map(playerId => {
+        {/* Dashboard */}
+        <div className="casual-dashboard">
+          {/* Colonne gauche - Sélection VIP */}
+          <div className="casual-panel">
+            <div className="panel-header">
+              <span className="panel-title">👶 Choisir le Noob</span>
+            </div>
+            <div className="player-list">
+              {players.map(playerId => {
                 const player = getPlayer(playerId);
-                const isSelected = selectedPlayers.includes(playerId);
+                const isVip = vip === playerId;
+                const isProtector = protectors.includes(playerId);
+                const isHunter = hunters.includes(playerId);
                 const stats = playerStats[playerId];
 
                 return (
                   <button
                     key={playerId}
-                    className={`matchup-mini ${isSelected ? 'active' : ''}`}
-                    onClick={() => togglePlayer(playerId)}
-                    style={{
-                      justifyContent: 'space-between',
-                      borderLeft: `3px solid ${player.color}`
-                    }}
+                    className={`player-btn ${isVip ? 'vip' : ''} ${isProtector ? 'protector' : ''} ${isHunter ? 'hunter' : ''}`}
+                    onClick={() => selectVip(playerId)}
                   >
-                    <span style={{ color: player.color, fontWeight: 500 }}>
-                      {player.name}
-                    </span>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
-                        {stats.totalPoints}pts
-                      </span>
-                      {isSelected && (
-                        <span style={{ color: 'var(--cyan-light)' }}>✓</span>
-                      )}
+                    <div className="player-avatar" style={{ background: player?.color }}>
+                      {player?.initial}
                     </div>
+                    <span className="player-name">{player?.name}</span>
+                    <span className="player-stats">{stats?.totalPoints || 0}pts</span>
+                    {isVip && <span className="role-badge vip">👶</span>}
+                    {isProtector && <span className="role-badge protector">🛡️</span>}
+                    {isHunter && <span className="role-badge hunter">⚔️</span>}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* COLONNE CENTRALE - Classement */}
-          <div className="dashboard-panel match-panel">
-            <div className="panel-header">
-              <span className="panel-title">Classement</span>
-              <span className="panel-badge">{Object.keys(rankings).length}/{selectedPlayers.length}</span>
-            </div>
-
-            {selectedPlayers.length >= 2 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {selectedPlayers.map(playerId => {
-                  const player = getPlayer(playerId);
-                  const currentPosition = rankings[playerId];
-
+          {/* Colonne centrale - Configuration des équipes */}
+          <div className="casual-panel teams-panel">
+            <div className="team-section">
+              <div className="team-header protectors">
+                <span>🛡️ PROTECTEURS (2)</span>
+                <span className="team-count">{protectors.length}/2</span>
+              </div>
+              {vip && (
+                <div className="vip-card">
+                  <div className="vip-avatar" style={{ background: getPlayer(vip)?.color }}>
+                    {getPlayer(vip)?.initial}
+                  </div>
+                  <div className="vip-info">
+                    <span className="vip-label">À PROTÉGER</span>
+                    <span className="vip-name" style={{ color: getPlayer(vip)?.color }}>
+                      {getPlayer(vip)?.name}
+                    </span>
+                  </div>
+                  <span className="vip-icon">👶</span>
+                </div>
+              )}
+              <div className="team-slots">
+                {[0, 1].map(idx => {
+                  const playerId = protectors[idx];
+                  const player = playerId ? getPlayer(playerId) : null;
                   return (
-                    <div key={playerId} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px',
-                      background: currentPosition ? 'rgba(100, 80, 30, 0.4)' : 'rgba(20, 40, 80, 0.5)',
-                      border: `2px solid ${currentPosition ? 'var(--yellow-selected)' : 'rgba(100, 150, 200, 0.3)'}`,
-                      borderRadius: '6px'
-                    }}>
-                      <div style={{
-                        width: '35px',
-                        height: '35px',
-                        borderRadius: '50%',
-                        background: player.color,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#0a0a1a',
-                        fontWeight: 600,
-                        fontSize: '0.9rem'
-                      }}>
-                        {player.initial}
-                      </div>
-                      <span style={{ flex: 1, fontFamily: 'Oswald' }}>{player.name}</span>
-
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        {selectedPlayers.map((_, idx) => {
-                          const pos = idx + 1;
-                          const isSelected = currentPosition === pos;
-                          const isTaken = Object.values(rankings).includes(pos) && !isSelected;
-                          const pts = getPointsForPosition(pos, selectedPlayers.length);
-
-                          return (
-                            <button
-                              key={pos}
-                              onClick={() => !isTaken && handlePositionSelect(playerId, pos)}
-                              disabled={isTaken}
-                              style={{
-                                width: '36px',
-                                height: '36px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: isSelected
-                                  ? pos === 1 ? 'linear-gradient(135deg, #ffd700, #b8860b)'
-                                    : pos === 2 ? 'linear-gradient(135deg, #c0c0c0, #808080)'
-                                    : pos === 3 ? 'linear-gradient(135deg, #cd7f32, #8b4513)'
-                                    : 'linear-gradient(180deg, #ffe840 0%, #d0a800 100%)'
-                                  : isTaken
-                                    ? 'rgba(50, 50, 50, 0.5)'
-                                    : 'rgba(20, 40, 80, 0.6)',
-                                border: `2px solid ${isSelected ? '#ffe860' : isTaken ? '#333' : 'rgba(100, 150, 200, 0.3)'}`,
-                                borderRadius: '4px',
-                                color: isSelected ? '#1a1a1a' : isTaken ? '#555' : '#c0d0e0',
-                                cursor: isTaken ? 'not-allowed' : 'pointer',
-                                fontFamily: 'Oswald',
-                                fontSize: '0.85rem',
-                                opacity: isTaken ? 0.4 : 1
-                              }}
-                            >
-                              <span style={{ fontWeight: 600 }}>{pos}</span>
-                              <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>+{pts}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                    <div key={idx} className={`team-slot ${player ? 'filled' : ''}`}>
+                      {player ? (
+                        <>
+                          <div className="slot-avatar" style={{ background: player.color }}>
+                            {player.initial}
+                          </div>
+                          <span style={{ color: player.color }}>{player.name}</span>
+                          <button className="remove-btn" onClick={() => toggleProtector(playerId)}>×</button>
+                        </>
+                      ) : (
+                        <span className="slot-empty">Sélectionner...</span>
+                      )}
                     </div>
                   );
                 })}
               </div>
-            ) : (
-              <div style={{
-                textAlign: 'center',
-                padding: '40px 20px',
-                color: 'var(--cyan-light)',
-                fontFamily: 'Oswald'
-              }}>
-                Sélectionne au moins 2 joueurs
+              <div className="available-players">
+                {availablePlayers.map(playerId => {
+                  const player = getPlayer(playerId);
+                  return (
+                    <button
+                      key={playerId}
+                      className="mini-player-btn"
+                      onClick={() => toggleProtector(playerId)}
+                      disabled={protectors.length >= 2}
+                    >
+                      <span style={{ color: player?.color }}>{player?.name}</span>
+                    </button>
+                  );
+                })}
               </div>
-            )}
+            </div>
 
-            {/* Actions */}
-            <div className="match-quick-actions" style={{ marginTop: 'auto' }}>
-              {selectedPlayers.length > 0 && (
-                <button className="action-btn cancel" onClick={clearSelection}>
-                  Annuler
-                </button>
-              )}
-              <button
-                className={`action-btn validate ${isComplete ? 'ready' : ''}`}
-                onClick={handleSubmit}
-                disabled={!isComplete}
-              >
-                Valider
-              </button>
+            <div className="vs-separator">VS</div>
+
+            <div className="team-section">
+              <div className="team-header hunters">
+                <span>⚔️ CHASSEURS (2)</span>
+                <span className="team-count">{hunters.length}/2</span>
+              </div>
+              <div className="team-slots">
+                {[0, 1].map(idx => {
+                  const playerId = hunters[idx];
+                  const player = playerId ? getPlayer(playerId) : null;
+                  return (
+                    <div key={idx} className={`team-slot ${player ? 'filled' : ''}`}>
+                      {player ? (
+                        <>
+                          <div className="slot-avatar" style={{ background: player.color }}>
+                            {player.initial}
+                          </div>
+                          <span style={{ color: player.color }}>{player.name}</span>
+                          <button className="remove-btn" onClick={() => toggleHunter(playerId)}>×</button>
+                        </>
+                      ) : (
+                        <span className="slot-empty">Sélectionner...</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="available-players">
+                {availablePlayers.map(playerId => {
+                  const player = getPlayer(playerId);
+                  return (
+                    <button
+                      key={playerId}
+                      className="mini-player-btn hunters"
+                      onClick={() => toggleHunter(playerId)}
+                      disabled={hunters.length >= 2}
+                    >
+                      <span style={{ color: player?.color }}>{player?.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* COLONNE DROITE - Historique */}
-          <div className="dashboard-panel results-panel">
+          {/* Colonne droite - Résultat */}
+          <div className="casual-panel result-panel">
             {lastMatch && (
               <div className="last-match-alert">
-                <span className="alert-winner" style={{ color: getPlayer(lastMatch.results?.find(r => r.position === 1)?.player)?.color }}>
-                  {getPlayer(lastMatch.results?.find(r => r.position === 1)?.player)?.name}
+                <span className="alert-text">
+                  {lastMatch.winner === 'protectors' ? '🛡️ Protecteurs' : '⚔️ Chasseurs'} gagnent !
                 </span>
-                <span className="alert-text">gagne !</span>
                 <button className="undo-btn" onClick={handleUndo}>Annuler</button>
               </div>
             )}
 
             <div className="panel-header">
-              <span className="panel-title">Historique</span>
-              <span className="panel-badge">{matches.length}</span>
+              <span className="panel-title">🏆 Qui a gagné ?</span>
             </div>
 
-            {recentMatches.length > 0 ? (
-              <div className="recent-list" style={{ maxHeight: '180px' }}>
-                {recentMatches.map((match) => (
-                  <div key={match.id} style={{
-                    padding: '8px 10px',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    borderRadius: '4px',
-                    marginBottom: '6px',
-                    fontSize: '0.8rem'
-                  }}>
-                    <div style={{ color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>
-                      {match.playerCount} joueurs
-                    </div>
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                      {match.results?.sort((a, b) => a.position - b.position).slice(0, 3).map(r => (
-                        <span key={r.player} style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '3px'
-                        }}>
-                          <span style={{
-                            width: '16px',
-                            height: '16px',
-                            borderRadius: '50%',
-                            background: r.position === 1 ? 'linear-gradient(135deg, #ffd700, #b8860b)'
-                              : r.position === 2 ? 'linear-gradient(135deg, #c0c0c0, #808080)'
-                              : 'linear-gradient(135deg, #cd7f32, #8b4513)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '0.6rem',
-                            fontWeight: 600,
-                            color: '#1a1a1a'
-                          }}>
-                            {r.position}
-                          </span>
-                          <span style={{ color: getPlayer(r.player)?.color }}>
-                            {getPlayer(r.player)?.name}
-                          </span>
-                        </span>
-                      ))}
-                      {match.results?.length > 3 && (
-                        <span style={{ color: 'rgba(255,255,255,0.4)' }}>
-                          +{match.results.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+            {isConfigComplete ? (
+              <div className="winner-selection">
+                <button
+                  className={`winner-btn protectors ${winner === 'protectors' ? 'selected' : ''}`}
+                  onClick={() => selectWinner('protectors')}
+                >
+                  <span className="winner-icon">🛡️</span>
+                  <span className="winner-label">Protecteurs</span>
+                  <span className="winner-desc">Le noob survit</span>
+                  <span className="winner-points">+{POINTS.protectors_win}pts / +{POINTS.vip_win}pts VIP</span>
+                </button>
+
+                <button
+                  className={`winner-btn hunters ${winner === 'hunters' ? 'selected' : ''}`}
+                  onClick={() => selectWinner('hunters')}
+                >
+                  <span className="winner-icon">⚔️</span>
+                  <span className="winner-label">Chasseurs</span>
+                  <span className="winner-desc">Le noob est mort</span>
+                  <span className="winner-points">+{POINTS.hunters_win}pts chacun</span>
+                </button>
               </div>
             ) : (
-              <div className="empty-mini">Aucune partie</div>
+              <div className="config-hint">
+                <p>Configure les équipes :</p>
+                <ul>
+                  <li className={vip ? 'done' : ''}>1 Noob à protéger {vip && '✓'}</li>
+                  <li className={protectors.length === 2 ? 'done' : ''}>2 Protecteurs {protectors.length === 2 && '✓'}</li>
+                  <li className={hunters.length === 2 ? 'done' : ''}>2 Chasseurs {hunters.length === 2 && '✓'}</li>
+                </ul>
+              </div>
             )}
 
-            {/* Système de points */}
+            <div className="action-buttons">
+              <button className="action-btn cancel" onClick={resetSelection}>
+                Reset
+              </button>
+              <button
+                className={`action-btn validate ${isConfigComplete && winner ? 'ready' : ''}`}
+                onClick={handleSubmit}
+                disabled={!isConfigComplete || !winner}
+              >
+                Valider
+              </button>
+            </div>
+
+            {/* Stats */}
             <div className="panel-header" style={{ marginTop: '1rem' }}>
-              <span className="panel-title">Points</span>
+              <span className="panel-title">📊 Stats</span>
+              <span className="panel-badge">{matches.length} matchs</span>
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--cyan-light)' }}>
-              <div style={{ marginBottom: '6px' }}>
-                Points = nb joueurs - position + 1
-              </div>
-              <div style={{ opacity: 0.7, fontSize: '0.75rem' }}>
-                Ex: 4 joueurs → 1er: 4pts, 2e: 3pts, 3e: 2pts, 4e: 1pt
-              </div>
+            <div className="stats-hint">
+              Protecteurs: +{POINTS.protectors_win}pts si victoire<br/>
+              VIP: +{POINTS.vip_win}pts si survie<br/>
+              Chasseurs: +{POINTS.hunters_win}pts si kill
             </div>
+
           </div>
         </div>
       </div>
 
-      {/* Bouton retour */}
       <Link to="/" className="back-btn">
-        &larr; Menu
+        ← Menu
       </Link>
 
-      {/* Layout Editor (mode dev) */}
       <LayoutEditor
         pageKey="casual"
         defaultLayout={DEFAULT_LAYOUT}
         controls={LAYOUT_CONTROLS}
         onLayoutChange={setLayout}
       />
+
+      <style>{`
+        .ff-toggle {
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+          margin-bottom: 20px;
+        }
+
+        .ff-btn {
+          padding: 8px 20px;
+          background: rgba(20, 40, 80, 0.5);
+          border: 2px solid rgba(100, 150, 200, 0.3);
+          border-radius: 6px;
+          color: rgba(255, 255, 255, 0.6);
+          font-family: 'Oswald', sans-serif;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .ff-btn.active {
+          background: rgba(100, 80, 30, 0.4);
+          border-color: var(--yellow-selected);
+          color: var(--yellow-selected);
+        }
+
+        .casual-dashboard {
+          display: grid;
+          grid-template-columns: 200px 1fr 250px;
+          gap: 15px;
+          min-height: 400px;
+        }
+
+        .casual-panel {
+          background: rgba(6, 18, 35, 0.7);
+          border: 2px solid rgba(100, 150, 200, 0.2);
+          border-radius: 8px;
+          padding: 15px;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .player-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          overflow-y: auto;
+          max-height: 350px;
+        }
+
+        .player-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 10px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 2px solid rgba(100, 150, 200, 0.2);
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .player-btn:hover {
+          border-color: var(--cyan-light);
+        }
+
+        .player-btn.vip {
+          background: rgba(255, 200, 0, 0.15);
+          border-color: var(--yellow-selected);
+        }
+
+        .player-btn.protector {
+          background: rgba(0, 150, 100, 0.15);
+          border-color: #00cc88;
+        }
+
+        .player-btn.hunter {
+          background: rgba(200, 50, 50, 0.15);
+          border-color: #cc4444;
+        }
+
+        .player-avatar {
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #0a0a1a;
+          font-weight: 600;
+          font-size: 0.85rem;
+        }
+
+        .player-name {
+          flex: 1;
+          font-family: 'Oswald', sans-serif;
+          color: white;
+          text-align: left;
+        }
+
+        .player-stats {
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        .role-badge {
+          font-size: 1rem;
+        }
+
+        .teams-panel {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .team-section {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .team-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 12px;
+          border-radius: 6px;
+          font-family: 'Oswald', sans-serif;
+          margin-bottom: 10px;
+        }
+
+        .team-header.protectors {
+          background: rgba(0, 150, 100, 0.2);
+          border: 1px solid #00cc88;
+          color: #00ff99;
+        }
+
+        .team-header.hunters {
+          background: rgba(200, 50, 50, 0.2);
+          border: 1px solid #cc4444;
+          color: #ff6666;
+        }
+
+        .team-count {
+          opacity: 0.7;
+        }
+
+        .vip-card {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 15px;
+          background: linear-gradient(180deg, rgba(255, 200, 0, 0.2) 0%, rgba(255, 180, 0, 0.1) 100%);
+          border: 2px solid var(--yellow-selected);
+          border-radius: 8px;
+          margin-bottom: 10px;
+        }
+
+        .vip-avatar {
+          width: 45px;
+          height: 45px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #0a0a1a;
+          font-weight: 700;
+          font-size: 1.1rem;
+          box-shadow: 0 0 15px rgba(255, 200, 0, 0.4);
+        }
+
+        .vip-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .vip-label {
+          font-size: 0.7rem;
+          color: rgba(255, 255, 255, 0.5);
+          text-transform: uppercase;
+        }
+
+        .vip-name {
+          font-family: 'Oswald', sans-serif;
+          font-size: 1.2rem;
+        }
+
+        .vip-icon {
+          font-size: 1.5rem;
+        }
+
+        .team-slots {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+
+        .team-slot {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 2px dashed rgba(100, 150, 200, 0.3);
+          border-radius: 6px;
+          min-height: 50px;
+        }
+
+        .team-slot.filled {
+          border-style: solid;
+          border-color: var(--cyan);
+        }
+
+        .slot-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #0a0a1a;
+          font-weight: 600;
+          font-size: 0.85rem;
+        }
+
+        .slot-empty {
+          color: rgba(255, 255, 255, 0.3);
+          font-size: 0.85rem;
+        }
+
+        .remove-btn {
+          margin-left: auto;
+          width: 24px;
+          height: 24px;
+          border: none;
+          background: rgba(255, 100, 100, 0.3);
+          border-radius: 50%;
+          color: #ff6666;
+          cursor: pointer;
+          font-size: 1rem;
+        }
+
+        .available-players {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .mini-player-btn {
+          padding: 6px 12px;
+          background: rgba(0, 100, 150, 0.3);
+          border: 1px solid var(--cyan);
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 0.8rem;
+          transition: all 0.15s;
+        }
+
+        .mini-player-btn:hover:not(:disabled) {
+          background: rgba(0, 150, 200, 0.4);
+        }
+
+        .mini-player-btn:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
+
+        .mini-player-btn.hunters {
+          background: rgba(150, 50, 50, 0.3);
+          border-color: #cc4444;
+        }
+
+        .mini-player-btn.hunters:hover:not(:disabled) {
+          background: rgba(200, 50, 50, 0.4);
+        }
+
+        .vs-separator {
+          text-align: center;
+          font-family: 'Oswald', sans-serif;
+          font-size: 1.5rem;
+          color: var(--yellow-selected);
+          padding: 10px 0;
+        }
+
+        .result-panel {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .winner-selection {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin-bottom: 15px;
+        }
+
+        .winner-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 15px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 2px solid rgba(100, 150, 200, 0.3);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .winner-btn:hover {
+          border-color: var(--cyan-light);
+        }
+
+        .winner-btn.selected {
+          border-color: var(--yellow-selected);
+          background: rgba(100, 80, 30, 0.4);
+        }
+
+        .winner-btn.protectors.selected {
+          border-color: #00cc88;
+          background: rgba(0, 150, 100, 0.3);
+        }
+
+        .winner-btn.hunters.selected {
+          border-color: #cc4444;
+          background: rgba(200, 50, 50, 0.3);
+        }
+
+        .winner-icon {
+          font-size: 2rem;
+          margin-bottom: 5px;
+        }
+
+        .winner-label {
+          font-family: 'Oswald', sans-serif;
+          font-size: 1.1rem;
+          color: white;
+        }
+
+        .winner-desc {
+          font-size: 0.8rem;
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        .winner-points {
+          font-size: 0.75rem;
+          color: var(--yellow-selected);
+          margin-top: 5px;
+        }
+
+        .config-hint {
+          padding: 20px;
+          text-align: center;
+          color: var(--cyan-light);
+        }
+
+        .config-hint ul {
+          list-style: none;
+          padding: 0;
+          margin: 10px 0 0 0;
+          text-align: left;
+        }
+
+        .config-hint li {
+          padding: 5px 0;
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        .config-hint li.done {
+          color: #00cc88;
+        }
+
+        .action-buttons {
+          display: flex;
+          gap: 10px;
+          margin-top: auto;
+        }
+
+        .action-btn {
+          flex: 1;
+          padding: 12px;
+          border: 2px solid;
+          border-radius: 6px;
+          font-family: 'Oswald', sans-serif;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .action-btn.cancel {
+          background: transparent;
+          border-color: rgba(255, 100, 100, 0.5);
+          color: #ff9999;
+        }
+
+        .action-btn.validate {
+          background: rgba(100, 100, 100, 0.3);
+          border-color: rgba(100, 150, 200, 0.3);
+          color: rgba(255, 255, 255, 0.4);
+        }
+
+        .action-btn.validate.ready {
+          background: linear-gradient(180deg, #ffe840 0%, #d0a800 100%);
+          border-color: var(--yellow-selected);
+          color: #181008;
+        }
+
+        .action-btn.validate:disabled {
+          cursor: not-allowed;
+        }
+
+        .stats-hint {
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.5);
+          line-height: 1.6;
+        }
+
+        .last-match-alert {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 12px;
+          background: rgba(0, 150, 100, 0.2);
+          border: 1px solid #00cc88;
+          border-radius: 6px;
+          margin-bottom: 15px;
+        }
+
+        .alert-text {
+          color: #00ff99;
+          font-family: 'Oswald', sans-serif;
+        }
+
+        .undo-btn {
+          padding: 4px 10px;
+          background: rgba(255, 100, 100, 0.2);
+          border: 1px solid #ff6666;
+          border-radius: 4px;
+          color: #ff9999;
+          cursor: pointer;
+          font-size: 0.8rem;
+        }
+      `}</style>
     </div>
   );
 };
