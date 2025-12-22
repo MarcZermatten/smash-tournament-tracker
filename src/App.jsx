@@ -7,6 +7,7 @@ import Team from './pages/Team';
 import Casual from './pages/Casual';
 import LeaderboardPage from './pages/LeaderboardPage';
 import Options from './pages/Options';
+import Players from './pages/Players';
 import './styles/melee.css';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
         <Route path="/team-noff" element={<Team mode="team_noff" />} />
         <Route path="/casual" element={<Casual />} />
         <Route path="/options" element={<Options />} />
+        <Route path="/players" element={<Players />} />
       </Routes>
     </BrowserRouter>
   );

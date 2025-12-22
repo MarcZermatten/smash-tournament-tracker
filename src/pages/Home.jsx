@@ -4,25 +4,24 @@ import { useAudio } from '../hooks/useAudio';
 
 const Home = () => {
   const { playSound, toggleSound, toggleMusic, soundEnabled, musicEnabled } = useAudio();
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   const menuItems = [
     {
       to: '/1v1',
-      label: '1v1 Mode',
+      label: '1v1',
       description: 'Matchs en tête-à-tête avec rotation!',
-      subItems: ['Marc vs Max', 'Marc vs Flo', 'Marc vs Boris', 'Tous les matchs']
+      subItems: ['Nouveau duel', 'Rotation', 'Historique']
     },
     {
       to: '/ffa',
-      label: 'VS. Mode',
+      label: 'FFA',
       description: 'Free For All - 4 joueurs!',
       subItems: ['Nouveau match', 'Historique', 'Règles']
     },
     {
       to: '/team-ff',
-      label: '2v2 Fire',
+      label: '2v2 FF',
       description: 'Équipes avec Friendly Fire!',
       subItems: ['Nouveau match', 'Rotation équipes', 'Scores']
     },
@@ -33,14 +32,14 @@ const Home = () => {
       subItems: ['Nouveau match', 'Rotation équipes', 'Scores']
     },
     {
-      to: '/casual',
-      label: 'Casual',
-      description: 'Mode détente - 2 à 8 joueurs!',
-      subItems: ['Partie rapide', 'Règles spéciales']
+      to: '/players',
+      label: 'Joueurs',
+      description: 'Gérer les joueurs du tournoi!',
+      subItems: ['Ajouter', 'Modifier', 'Avatars']
     },
     {
       to: '/leaderboard',
-      label: 'Trophies',
+      label: 'Résultats',
       description: 'Classements et statistiques!',
       subItems: ['Général', 'Par mode', 'Records']
     },
@@ -48,7 +47,7 @@ const Home = () => {
       to: '/options',
       label: 'Options',
       description: 'Configuration du tracker!',
-      subItems: ['Joueurs', 'Son', 'Données']
+      subItems: ['Son', 'Données', 'Reset']
     },
   ];
 
@@ -65,65 +64,61 @@ const Home = () => {
     playSound('confirm');
   };
 
-  const activeIndex = hoveredIndex !== null ? hoveredIndex : selectedIndex;
-  const activeItem = menuItems[activeIndex];
+  const activeItem = hoveredIndex !== null ? menuItems[hoveredIndex] : null;
 
   return (
     <div className="home-page">
-      {/* Ligne cyan horizontale en haut */}
-      <div className="melee-top-line" />
-
-      {/* Effet de spirale lumineuse supplémentaire */}
-      <div className="melee-glow" />
-
-      {/* Header "Main Menu" style Melee */}
-      <div className="melee-header">
-        <div className="melee-logo-container">
+      {/* CADRE BLEU PRINCIPAL - Englobant tout le contenu style Melee */}
+      <div className="melee-main-frame">
+        {/* Header "Main Menu" style Melee - INTÉGRÉ au cadre */}
+        <div className="melee-header">
           <h1 className="melee-logo">Main Menu</h1>
+          <div className="melee-header-line" />
         </div>
-      </div>
 
-      {/* Container menu + panneau latéral */}
-      <div className="menu-container">
-        {/* Menu principal */}
-        <nav className="melee-main-menu">
-          {menuItems.map((item, index) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`melee-menu-item ${index === activeIndex ? 'selected' : ''}`}
-              onMouseEnter={() => handleMouseEnter(index)}
-              onMouseLeave={handleMouseLeave}
-              onClick={handleClick}
-            >
-              {item.label}
-              {/* Indicateur de sélection - cercle doré */}
-              <span className="select-indicator" />
-            </Link>
-          ))}
-        </nav>
+        {/* Container menu + panneau latéral */}
+        <div className="menu-container">
+          {/* Menu principal */}
+          <nav className="melee-main-menu">
+            {menuItems.map((item, index) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`melee-menu-item ${index === hoveredIndex ? 'selected' : ''}`}
+                onMouseEnter={() => handleMouseEnter(index)}
+                onMouseLeave={handleMouseLeave}
+                onClick={handleClick}
+              >
+                {/* Texte du bouton */}
+                <span className="button-label">{item.label}</span>
+                {/* Indicateur cercle (visible seulement quand sélectionné) */}
+                <span className="select-indicator" />
+              </Link>
+            ))}
+          </nav>
 
-        {/* Panneau latéral cyan */}
-        <div className="side-panel">
-          <div className="side-panel-decoration">TRACKER</div>
-          {activeItem.subItems.map((subItem, index) => (
-            <div
-              key={index}
-              className={`side-panel-item ${index === 0 ? 'active' : ''}`}
-            >
-              {subItem}
-            </div>
-          ))}
-          {/* Image preview en bas du panneau */}
-          <div className="side-panel-image">
-            <img src="/assets/melee/stage-select.png" alt="Preview" />
+          {/* Panneau latéral cyan */}
+          <div className="side-panel">
+            <div className="side-panel-decoration">SMASH</div>
+            {activeItem ? (
+              activeItem.subItems.map((subItem, index) => (
+                <div
+                  key={index}
+                  className={`side-panel-item ${index === 0 ? 'active' : ''}`}
+                >
+                  {subItem}
+                </div>
+              ))
+            ) : (
+              <div className="side-panel-item active">Sélectionner un mode</div>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Barre de description en bas */}
-      <div className="description-bar">
-        {activeItem.description}
+        {/* Barre de description - ENCASTRÉE dans le cadre */}
+        <div className="description-bar">
+          {activeItem ? activeItem.description : 'Survolez un mode de jeu'}
+        </div>
       </div>
 
       {/* Contrôles audio */}
