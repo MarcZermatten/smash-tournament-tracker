@@ -5,6 +5,7 @@ import { useTournament } from '../context/TournamentContext';
 import { useModal } from '../components/Modal';
 import { getMatchesByType, getLeaderboard } from '../data/storage';
 import { getPlayer, getMainPlayers } from '../data/players';
+import AudioControls from '../components/AudioControls';
 
 const Home = () => {
   const { playSound, toggleSound, toggleMusic, soundEnabled, musicEnabled } = useAudio();
@@ -697,6 +698,8 @@ const Home = () => {
           line-height: 1.4;
         }
       `}</style>
+
+      <AudioControls />
     </div>
   );
 };

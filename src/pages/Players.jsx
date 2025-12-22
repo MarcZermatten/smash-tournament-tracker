@@ -17,6 +17,7 @@ import {
 import { useAudio } from '../context/AudioContext';
 import { useModal } from '../components/Modal';
 import LayoutEditor from '../components/LayoutEditor';
+import AudioControls from '../components/AudioControls';
 
 // Configuration par défaut du layout Players
 const DEFAULT_LAYOUT = {
@@ -520,6 +521,8 @@ const Players = () => {
         controls={LAYOUT_CONTROLS}
         onLayoutChange={setLayout}
       />
+
+      <AudioControls />
 
       <style>{`
         .player-row-avatar-img {

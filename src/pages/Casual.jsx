@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getMainPlayers, getPlayer } from '../data/players';
-import { addMatch, getMatchesByType, undoLastMatch } from '../data/storage';
+import { addMatch, getMatchesByType, undoLastMatch, getPointsConfig } from '../data/storage';
 import { useAudio } from '../context/AudioContext';
 import LayoutEditor from '../components/LayoutEditor';
+import AudioControls from '../components/AudioControls';
 
 // Configuration par défaut du layout Casual
 const DEFAULT_LAYOUT = {
@@ -28,24 +29,55 @@ const LAYOUT_CONTROLS = [
   { key: 'fontSize', label: 'Taille texte', min: 80, max: 120, unit: '%', group: 'Texte' },
 ];
 
-// Points pour le mode Casual 2v3
-const POINTS = {
+// Points par défaut pour le mode Casual 2v3
+const DEFAULT_POINTS = {
   protectors_win: 3,   // Points pour les protecteurs si le VIP survit
   vip_win: 2,          // Points pour le VIP s'il survit
   hunters_win: 3,      // Points pour les chasseurs s'ils tuent le VIP
   vip_lose: 0,         // Points pour le VIP s'il meurt
 };
 
+const CASUAL_VIP_KEY = 'smash_casual_vip';
+
 const Casual = () => {
   const [players, setPlayers] = useState([]);
-  const [vip, setVip] = useState(null);           // Le joueur à protéger
+  const [vip, setVip] = useState(null);           // Le joueur à protéger (persistant)
   const [protectors, setProtectors] = useState([]); // Les 2 protecteurs
   const [hunters, setHunters] = useState([]);      // Les 2 chasseurs
   const [friendlyFire, setFriendlyFire] = useState(true);
   const [winner, setWinner] = useState(null);      // 'protectors' ou 'hunters'
   const [lastMatch, setLastMatch] = useState(null);
   const [layout, setLayout] = useState(DEFAULT_LAYOUT);
+  const [POINTS, setPOINTS] = useState(DEFAULT_POINTS);
+  const [vipLocked, setVipLocked] = useState(false); // Le noob est-il verrouillé ?
   const { playSound } = useAudio();
+
+  // Charger la config des points depuis les settings
+  useEffect(() => {
+    const loadPoints = () => {
+      const config = getPointsConfig();
+      if (config.casual) {
+        setPOINTS({
+          vip_win: config.casual.vip_win ?? DEFAULT_POINTS.vip_win,
+          vip_lose: config.casual.vip_lose ?? DEFAULT_POINTS.vip_lose,
+          protectors_win: config.casual.protectors_win ?? DEFAULT_POINTS.protectors_win,
+          hunters_win: config.casual.hunters_win ?? DEFAULT_POINTS.hunters_win,
+        });
+      }
+    };
+    loadPoints();
+    window.addEventListener('settingsUpdate', loadPoints);
+    return () => window.removeEventListener('settingsUpdate', loadPoints);
+  }, []);
+
+  // Charger le noob persistant au démarrage
+  useEffect(() => {
+    const savedVip = localStorage.getItem(CASUAL_VIP_KEY);
+    if (savedVip) {
+      setVip(savedVip);
+      setVipLocked(true);
+    }
+  }, []);
 
   useEffect(() => {
     setPlayers(getMainPlayers());
@@ -56,22 +88,85 @@ const Casual = () => {
 
   const matches = getMatchesByType('casual');
 
-  // Reset la sélection
-  const resetSelection = () => {
-    setVip(null);
+  // Calculer les rotations possibles quand le VIP est sélectionné
+  const getRotations = () => {
+    if (!vip) return [];
+    const otherPlayers = players.filter(p => p !== vip);
+    if (otherPlayers.length < 4) return [];
+
+    const rotations = [];
+    // Générer toutes les combinaisons de 2 protecteurs parmi les 4 autres joueurs
+    for (let i = 0; i < otherPlayers.length; i++) {
+      for (let j = i + 1; j < otherPlayers.length; j++) {
+        const prots = [otherPlayers[i], otherPlayers[j]];
+        const hunts = otherPlayers.filter(p => !prots.includes(p));
+        rotations.push({ protectors: prots, hunters: hunts });
+      }
+    }
+    return rotations;
+  };
+
+  const rotations = getRotations();
+
+  // Vérifier si une rotation a déjà été jouée (pour un mode FF spécifique)
+  const isRotationPlayed = (rotation, ff) => {
+    return matches.some(m =>
+      m.vip === vip &&
+      m.friendlyFire === ff &&
+      m.protectors.length === 2 &&
+      m.protectors.includes(rotation.protectors[0]) &&
+      m.protectors.includes(rotation.protectors[1])
+    );
+  };
+
+  // Compter les rotations restantes par mode FF
+  const countRemainingRotations = (ff) => {
+    return rotations.filter(r => !isRotationPlayed(r, ff)).length;
+  };
+
+  // Sélectionner une rotation (auto-remplir protecteurs et chasseurs)
+  const selectRotation = (rotation) => {
+    setProtectors(rotation.protectors);
+    setHunters(rotation.hunters);
+    playSound('select');
+  };
+
+  // Reset la sélection (garde le noob si verrouillé)
+  const resetSelection = (keepVip = true) => {
+    if (!keepVip) {
+      setVip(null);
+      setVipLocked(false);
+      localStorage.removeItem(CASUAL_VIP_KEY);
+    }
     setProtectors([]);
     setHunters([]);
     setWinner(null);
     playSound('cancel');
   };
 
-  // Sélectionner le VIP
+  // Changer de noob (déverrouiller)
+  const changeVip = () => {
+    setVip(null);
+    setVipLocked(false);
+    localStorage.removeItem(CASUAL_VIP_KEY);
+    setProtectors([]);
+    setHunters([]);
+    setWinner(null);
+    playSound('cancel');
+  };
+
+  // Sélectionner le VIP (et le verrouiller)
   const selectVip = (playerId) => {
+    if (vipLocked) return; // Ne pas changer si verrouillé
+
     if (vip === playerId) {
       setVip(null);
-      // Réassigner aux disponibles
+      localStorage.removeItem(CASUAL_VIP_KEY);
     } else {
       setVip(playerId);
+      // Persister et verrouiller le noob
+      localStorage.setItem(CASUAL_VIP_KEY, playerId);
+      setVipLocked(true);
       // Retirer des autres rôles si présent
       setProtectors(prev => prev.filter(p => p !== playerId));
       setHunters(prev => prev.filter(p => p !== playerId));
@@ -145,7 +240,7 @@ const Casual = () => {
     setLastMatch(match);
     resetSelection();
     window.dispatchEvent(new Event('scoreUpdate'));
-  }, [vip, protectors, hunters, winner, friendlyFire, isConfigComplete, playSound]);
+  }, [vip, protectors, hunters, winner, friendlyFire, isConfigComplete, playSound, POINTS]);
 
   // Annuler le dernier match
   const handleUndo = () => {
@@ -237,37 +332,137 @@ const Casual = () => {
 
         {/* Dashboard */}
         <div className="casual-dashboard">
-          {/* Colonne gauche - Sélection VIP */}
+          {/* Colonne gauche - Sélection VIP et Rotations */}
           <div className="casual-panel">
-            <div className="panel-header">
-              <span className="panel-title">👶 Choisir le Noob</span>
-            </div>
-            <div className="player-list">
-              {players.map(playerId => {
-                const player = getPlayer(playerId);
-                const isVip = vip === playerId;
-                const isProtector = protectors.includes(playerId);
-                const isHunter = hunters.includes(playerId);
-                const stats = playerStats[playerId];
+            {/* Section Noob */}
+            {!vipLocked ? (
+              <>
+                <div className="panel-header">
+                  <span className="panel-title">👶 Choisir le Noob</span>
+                </div>
+                <div className="player-list">
+                  {players.map(playerId => {
+                    const player = getPlayer(playerId);
+                    const isVip = vip === playerId;
+                    const stats = playerStats[playerId];
 
-                return (
-                  <button
-                    key={playerId}
-                    className={`player-btn ${isVip ? 'vip' : ''} ${isProtector ? 'protector' : ''} ${isHunter ? 'hunter' : ''}`}
-                    onClick={() => selectVip(playerId)}
-                  >
-                    <div className="player-avatar" style={{ background: player?.color }}>
-                      {player?.initial}
-                    </div>
-                    <span className="player-name">{player?.name}</span>
-                    <span className="player-stats">{stats?.totalPoints || 0}pts</span>
-                    {isVip && <span className="role-badge vip">👶</span>}
-                    {isProtector && <span className="role-badge protector">🛡️</span>}
-                    {isHunter && <span className="role-badge hunter">⚔️</span>}
+                    return (
+                      <button
+                        key={playerId}
+                        className={`player-btn ${isVip ? 'vip' : ''}`}
+                        onClick={() => selectVip(playerId)}
+                      >
+                        <div className="player-avatar" style={{ background: player?.color }}>
+                          {player?.initial}
+                        </div>
+                        <span className="player-name">{player?.name}</span>
+                        <span className="player-stats">{stats?.totalPoints || 0}pts</span>
+                        {isVip && <span className="role-badge vip">👶</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Noob verrouillé - afficher uniquement les rotations */}
+                <div className="vip-locked-header">
+                  <div className="vip-locked-info">
+                    <span className="vip-locked-label">NOOB</span>
+                    <span className="vip-locked-name" style={{ color: getPlayer(vip)?.color }}>
+                      {getPlayer(vip)?.name}
+                    </span>
+                  </div>
+                  <button className="change-vip-btn" onClick={changeVip}>
+                    Changer
                   </button>
-                );
-              })}
-            </div>
+                </div>
+
+                {/* Rotations FF ON */}
+                <div className="rotations-section">
+                  <div className="panel-header ff-on">
+                    <span className="panel-title">🔥 FF ON</span>
+                    <span className="panel-badge">
+                      {countRemainingRotations(true)}/{rotations.length}
+                    </span>
+                  </div>
+                  <div className="rotations-list">
+                    {rotations.map((rotation, idx) => {
+                      const played = isRotationPlayed(rotation, true);
+                      const isCurrentSelection =
+                        friendlyFire &&
+                        protectors.includes(rotation.protectors[0]) &&
+                        protectors.includes(rotation.protectors[1]);
+
+                      return (
+                        <button
+                          key={`on-${idx}`}
+                          className={`rotation-btn ${played ? 'played' : ''} ${isCurrentSelection ? 'selected' : ''}`}
+                          onClick={() => {
+                            if (!played) {
+                              setFriendlyFire(true);
+                              selectRotation(rotation);
+                            }
+                          }}
+                          disabled={played}
+                        >
+                          <span className="rot-team prot">
+                            🛡️ {getPlayer(rotation.protectors[0])?.name?.substring(0, 3)}-{getPlayer(rotation.protectors[1])?.name?.substring(0, 3)}
+                          </span>
+                          <span className="rot-vs">vs</span>
+                          <span className="rot-team hunt">
+                            ⚔️ {getPlayer(rotation.hunters[0])?.name?.substring(0, 3)}-{getPlayer(rotation.hunters[1])?.name?.substring(0, 3)}
+                          </span>
+                          {played && <span className="rot-done">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Rotations FF OFF */}
+                <div className="rotations-section">
+                  <div className="panel-header ff-off">
+                    <span className="panel-title">🛡️ FF OFF</span>
+                    <span className="panel-badge">
+                      {countRemainingRotations(false)}/{rotations.length}
+                    </span>
+                  </div>
+                  <div className="rotations-list">
+                    {rotations.map((rotation, idx) => {
+                      const played = isRotationPlayed(rotation, false);
+                      const isCurrentSelection =
+                        !friendlyFire &&
+                        protectors.includes(rotation.protectors[0]) &&
+                        protectors.includes(rotation.protectors[1]);
+
+                      return (
+                        <button
+                          key={`off-${idx}`}
+                          className={`rotation-btn ${played ? 'played' : ''} ${isCurrentSelection ? 'selected' : ''}`}
+                          onClick={() => {
+                            if (!played) {
+                              setFriendlyFire(false);
+                              selectRotation(rotation);
+                            }
+                          }}
+                          disabled={played}
+                        >
+                          <span className="rot-team prot">
+                            🛡️ {getPlayer(rotation.protectors[0])?.name?.substring(0, 3)}-{getPlayer(rotation.protectors[1])?.name?.substring(0, 3)}
+                          </span>
+                          <span className="rot-vs">vs</span>
+                          <span className="rot-team hunt">
+                            ⚔️ {getPlayer(rotation.hunters[0])?.name?.substring(0, 3)}-{getPlayer(rotation.hunters[1])?.name?.substring(0, 3)}
+                          </span>
+                          {played && <span className="rot-done">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Colonne centrale - Configuration des équipes */}
@@ -399,7 +594,7 @@ const Casual = () => {
                   <span className="winner-icon">🛡️</span>
                   <span className="winner-label">Protecteurs</span>
                   <span className="winner-desc">Le noob survit</span>
-                  <span className="winner-points">+{POINTS.protectors_win}pts / +{POINTS.vip_win}pts VIP</span>
+                  <span className="winner-points">+{POINTS.protectors_win}pts / VIP +{POINTS.vip_win}pts</span>
                 </button>
 
                 <button
@@ -443,9 +638,36 @@ const Casual = () => {
             </div>
             <div className="stats-hint">
               Protecteurs: +{POINTS.protectors_win}pts si victoire<br/>
-              VIP: +{POINTS.vip_win}pts si survie<br/>
+              VIP (noob): +{POINTS.vip_win}pts si survie<br/>
               Chasseurs: +{POINTS.hunters_win}pts si kill
             </div>
+
+            {/* Historique des matchs */}
+            {matches.length > 0 && (
+              <div className="match-history">
+                <div className="panel-header" style={{ marginTop: '1rem' }}>
+                  <span className="panel-title">📜 Historique</span>
+                </div>
+                <div className="history-list">
+                  {matches.slice(-5).reverse().map((match, idx) => {
+                    const vipPlayer = getPlayer(match.vip);
+                    return (
+                      <div key={match.id || idx} className={`history-item ${match.winner}`}>
+                        <span className="history-vip" style={{ color: vipPlayer?.color }}>
+                          {vipPlayer?.name}
+                        </span>
+                        <span className="history-result">
+                          {match.winner === 'protectors' ? '🛡️ Survit' : '⚔️ Mort'}
+                        </span>
+                        <span className="history-ff">
+                          {match.friendlyFire ? 'FF' : 'NoFF'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
@@ -461,6 +683,8 @@ const Casual = () => {
         controls={LAYOUT_CONTROLS}
         onLayoutChange={setLayout}
       />
+
+      <AudioControls />
 
       <style>{`
         .ff-toggle {
@@ -489,7 +713,7 @@ const Casual = () => {
 
         .casual-dashboard {
           display: grid;
-          grid-template-columns: 200px 1fr 250px;
+          grid-template-columns: 280px 1fr 250px;
           gap: 15px;
           min-height: 400px;
         }
@@ -902,6 +1126,192 @@ const Casual = () => {
           color: #ff9999;
           cursor: pointer;
           font-size: 0.8rem;
+        }
+
+        /* Rotations */
+        .rotations-section {
+          margin-top: 10px;
+        }
+
+        .rotations-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          max-height: 180px;
+          overflow-y: auto;
+        }
+
+        .rotation-btn {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 8px 10px;
+          background: rgba(20, 40, 80, 0.5);
+          border: 2px solid rgba(100, 150, 200, 0.3);
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 0.8rem;
+          transition: all 0.15s;
+        }
+
+        .rotation-btn:hover:not(:disabled) {
+          border-color: var(--cyan);
+          background: rgba(30, 60, 100, 0.6);
+        }
+
+        .rotation-btn.selected {
+          border-color: var(--yellow-selected);
+          background: rgba(100, 80, 30, 0.5);
+        }
+
+        .rotation-btn.played {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        .rot-team {
+          font-family: 'Oswald', sans-serif;
+        }
+
+        .rot-team.prot {
+          color: #00cc88;
+        }
+
+        .rot-team.hunt {
+          color: #ff6666;
+        }
+
+        .rot-vs {
+          color: rgba(255, 255, 255, 0.4);
+          font-size: 0.7rem;
+        }
+
+        .rot-done {
+          color: #00ff88;
+          font-weight: bold;
+        }
+
+        /* Historique des matchs */
+        .match-history {
+          margin-top: 10px;
+        }
+
+        .history-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          max-height: 150px;
+          overflow-y: auto;
+        }
+
+        .history-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 6px 10px;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 4px;
+          font-size: 0.8rem;
+          border-left: 3px solid;
+        }
+
+        .history-item.protectors {
+          border-color: #00cc88;
+        }
+
+        .history-item.hunters {
+          border-color: #cc4444;
+        }
+
+        .history-vip {
+          font-family: 'Oswald', sans-serif;
+          flex: 1;
+        }
+
+        .history-result {
+          font-size: 0.75rem;
+        }
+
+        .history-ff {
+          font-size: 0.65rem;
+          padding: 2px 5px;
+          background: rgba(100, 100, 100, 0.3);
+          border-radius: 3px;
+          color: rgba(255, 255, 255, 0.6);
+          margin-left: 8px;
+        }
+
+        /* VIP Verrouillé */
+        .vip-locked-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px;
+          background: linear-gradient(180deg, rgba(255, 200, 0, 0.2) 0%, rgba(255, 180, 0, 0.1) 100%);
+          border: 2px solid var(--yellow-selected);
+          border-radius: 8px;
+          margin-bottom: 15px;
+        }
+
+        .vip-locked-info {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .vip-locked-label {
+          font-size: 0.7rem;
+          color: rgba(255, 255, 255, 0.5);
+          text-transform: uppercase;
+        }
+
+        .vip-locked-name {
+          font-family: 'Oswald', sans-serif;
+          font-size: 1.3rem;
+        }
+
+        .change-vip-btn {
+          padding: 6px 12px;
+          background: rgba(255, 100, 100, 0.2);
+          border: 1px solid #ff6666;
+          border-radius: 4px;
+          color: #ff9999;
+          cursor: pointer;
+          font-size: 0.8rem;
+          transition: all 0.15s;
+        }
+
+        .change-vip-btn:hover {
+          background: rgba(255, 100, 100, 0.4);
+        }
+
+        /* Panel headers FF */
+        .panel-header.ff-on {
+          background: rgba(255, 100, 50, 0.15);
+          border: 1px solid #ff6633;
+          border-radius: 4px;
+          padding: 6px 10px;
+          margin-bottom: 8px;
+        }
+
+        .panel-header.ff-on .panel-title {
+          color: #ff9966;
+        }
+
+        .panel-header.ff-off {
+          background: rgba(0, 150, 200, 0.15);
+          border: 1px solid #0099cc;
+          border-radius: 4px;
+          padding: 6px 10px;
+          margin-bottom: 8px;
+        }
+
+        .panel-header.ff-off .panel-title {
+          color: #66ccff;
+        }
+
+        .rotations-list {
+          max-height: 120px;
         }
       `}</style>
     </div>

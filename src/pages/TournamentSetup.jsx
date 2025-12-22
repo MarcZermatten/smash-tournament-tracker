@@ -7,6 +7,7 @@ import {
 import { useTournament } from '../context/TournamentContext';
 import { useAudio } from '../context/AudioContext';
 import { useModal } from '../components/Modal';
+import AudioControls from '../components/AudioControls';
 
 const TournamentSetup = () => {
   const navigate = useNavigate();
@@ -22,8 +23,11 @@ const TournamentSetup = () => {
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [showNewPlayer, setShowNewPlayer] = useState(false);
+  const [casualNoob, setCasualNoob] = useState(null); // Noob pour le mode Casual
 
   const fileInputRef = useRef(null);
+
+  const CASUAL_VIP_KEY = 'smash_casual_vip';
 
   useEffect(() => {
     const loadPlayers = () => {
@@ -145,11 +149,23 @@ const TournamentSetup = () => {
       showAlert('Sélectionne au moins 1 mode de jeu !');
       return;
     }
+    // Vérifier qu'un noob est sélectionné si le mode Casual est activé
+    if (selectedModes.includes('casual') && !casualNoob) {
+      showAlert('Sélectionne le Noob pour le mode Casual !');
+      return;
+    }
 
     // Mettre à jour isMain pour les joueurs sélectionnés
     Object.keys(players).forEach(id => {
       updatePlayer(id, { isMain: selectedPlayers.includes(id) });
     });
+
+    // Sauvegarder le noob pour le mode Casual
+    if (selectedModes.includes('casual') && casualNoob) {
+      localStorage.setItem(CASUAL_VIP_KEY, casualNoob);
+    } else {
+      localStorage.removeItem(CASUAL_VIP_KEY);
+    }
 
     startTournament({
       name: tournamentName || `Tournoi du ${new Date().toLocaleDateString('fr-FR')}`,
@@ -380,6 +396,39 @@ const TournamentSetup = () => {
                 />
               </div>
 
+              {/* Sélection du Noob si mode Casual activé */}
+              {selectedModes.includes('casual') && (
+                <div className="form-group noob-selection">
+                  <label>👶 Choisir le Noob pour le mode Casual</label>
+                  <div className="noob-options">
+                    {selectedPlayers.map(id => {
+                      const player = players[id];
+                      if (!player) return null;
+                      return (
+                        <button
+                          key={id}
+                          className={`noob-btn ${casualNoob === id ? 'selected' : ''}`}
+                          onClick={() => {
+                            setCasualNoob(id);
+                            playSound('select');
+                          }}
+                          style={{ '--player-color': player.color }}
+                        >
+                          <div className="noob-avatar" style={{ background: player.color }}>
+                            {player.initial}
+                          </div>
+                          <span className="noob-name">{player.name}</span>
+                          {casualNoob === id && <span className="noob-check">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {!casualNoob && (
+                    <p className="noob-hint">Le noob sera protégé par 2 joueurs contre 2 chasseurs</p>
+                  )}
+                </div>
+              )}
+
               <div className="summary">
                 <div className="summary-item">
                   <span className="label">Joueurs</span>
@@ -393,6 +442,14 @@ const TournamentSetup = () => {
                     {selectedModes.map(id => modes.find(m => m.id === id)?.name).join(', ')}
                   </span>
                 </div>
+                {casualNoob && (
+                  <div className="summary-item">
+                    <span className="label">Noob</span>
+                    <span className="value" style={{ color: players[casualNoob]?.color }}>
+                      {players[casualNoob]?.name}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="warning-box">
@@ -885,7 +942,80 @@ const TournamentSetup = () => {
           border-radius: 6px;
           cursor: pointer;
         }
+
+        /* Noob Selection */
+        .noob-selection {
+          background: rgba(255, 200, 0, 0.1);
+          border: 2px solid rgba(255, 200, 0, 0.3);
+          border-radius: 8px;
+          padding: 15px;
+          margin-bottom: 20px;
+        }
+
+        .noob-selection label {
+          color: var(--yellow-selected) !important;
+          font-size: 1rem !important;
+          display: block;
+          margin-bottom: 12px;
+        }
+
+        .noob-options {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .noob-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 15px;
+          background: rgba(6, 18, 35, 0.7);
+          border: 2px solid rgba(100, 150, 200, 0.3);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .noob-btn:hover {
+          border-color: var(--player-color);
+        }
+
+        .noob-btn.selected {
+          border-color: var(--yellow-selected);
+          background: rgba(255, 200, 0, 0.2);
+        }
+
+        .noob-avatar {
+          width: 35px;
+          height: 35px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #1a1a1a;
+          font-weight: 600;
+        }
+
+        .noob-name {
+          font-family: 'Oswald', sans-serif;
+          color: white;
+        }
+
+        .noob-check {
+          color: var(--yellow-selected);
+          font-weight: bold;
+        }
+
+        .noob-hint {
+          margin-top: 10px;
+          font-size: 0.85rem;
+          color: rgba(255, 255, 255, 0.5);
+          font-style: italic;
+        }
       `}</style>
+
+      <AudioControls />
     </div>
   );
 };

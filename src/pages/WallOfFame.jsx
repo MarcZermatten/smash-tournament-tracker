@@ -5,6 +5,7 @@ import { getPlayer } from '../data/players';
 import { useAudio } from '../context/AudioContext';
 import { useModal } from '../components/Modal';
 import LayoutEditor from '../components/LayoutEditor';
+import AudioControls from '../components/AudioControls';
 
 // Configuration par défaut du layout Wall of Fame
 const DEFAULT_LAYOUT = {
@@ -458,6 +459,8 @@ const WallOfFame = () => {
       />
 
       {renderTournamentModal()}
+
+      <AudioControls />
 
       <style>{`
         .section-title {

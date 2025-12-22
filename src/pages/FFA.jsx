@@ -5,6 +5,7 @@ import { addMatch, getMatchesByType, undoLastMatch, getMatchConfig } from '../da
 import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
+import AudioControls from '../components/AudioControls';
 
 // Configuration par défaut du layout FFA
 const DEFAULT_LAYOUT = {
@@ -548,6 +549,8 @@ const FFA = () => {
         controls={LAYOUT_CONTROLS}
         onLayoutChange={setLayout}
       />
+
+      <AudioControls />
     </div>
   );
 };

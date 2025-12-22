@@ -21,7 +21,7 @@ const getDefaultData = () => ({
       ffa: { 1: 5, 2: 3, 3: 1, 4: 0 },
       team_ff: { win: 3, lose: 0 },
       team_noff: { win: 3, lose: 0 },
-      casual: { win: 2, lose: 0 }
+      casual: { vip_win: 2, vip_lose: 0, protectors_win: 3, hunters_win: 3 }
     },
     // Config matchs par défaut
     matchConfig: {

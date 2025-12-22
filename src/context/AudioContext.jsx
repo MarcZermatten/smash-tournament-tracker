@@ -247,14 +247,27 @@ export const AudioProvider = ({ children }) => {
     }
   }, [isPlaying]);
 
-  // Piste suivante
+  // Piste suivante (aléatoire)
   const nextTrack = useCallback(() => {
     if (playlist.length <= 1) return;
 
+    // Choisir une piste aléatoire différente de l'actuelle
     const available = playlist.filter(t => t.id !== currentTrack?.id);
     if (available.length > 0) {
-      const next = available[Math.floor(Math.random() * available.length)];
-      playTrackInternal(next, volume);
+      const randomTrack = available[Math.floor(Math.random() * available.length)];
+      playTrackInternal(randomTrack, volume);
+    }
+  }, [playlist, currentTrack, volume, playTrackInternal]);
+
+  // Piste précédente (aléatoire)
+  const previousTrack = useCallback(() => {
+    if (playlist.length <= 1) return;
+
+    // Choisir une piste aléatoire différente de l'actuelle
+    const available = playlist.filter(t => t.id !== currentTrack?.id);
+    if (available.length > 0) {
+      const randomTrack = available[Math.floor(Math.random() * available.length)];
+      playTrackInternal(randomTrack, volume);
     }
   }, [playlist, currentTrack, volume, playTrackInternal]);
 
@@ -338,6 +351,7 @@ export const AudioProvider = ({ children }) => {
     stopMusic,
     togglePlayPause,
     nextTrack,
+    previousTrack,
     toggleSound,
     toggleMusic,
     changeVolume,

@@ -8,6 +8,7 @@ import {
 } from '../data/storage';
 import { getMainPlayers } from '../data/players';
 import LayoutEditor from '../components/LayoutEditor';
+import AudioControls from '../components/AudioControls';
 
 // Configuration par défaut du layout Options
 const DEFAULT_LAYOUT = {
@@ -37,7 +38,7 @@ const Options = () => {
     soundEnabled, musicEnabled, volume,
     toggleSound, toggleMusic, changeVolume,
     currentTrack, playlist, isPlaying,
-    togglePlayPause, nextTrack, selectTrack
+    togglePlayPause, nextTrack, previousTrack, selectTrack
   } = useAudio();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [importStatus, setImportStatus] = useState(null);
@@ -154,7 +155,7 @@ const Options = () => {
       ffa: { 1: 5, 2: 3, 3: 1, 4: 0 },
       team_ff: { win: 3, lose: 0 },
       team_noff: { win: 3, lose: 0 },
-      casual: { win: 2, lose: 0 }
+      casual: { vip_win: 2, vip_lose: 0, protectors_win: 3, hunters_win: 3 }
     };
     setPointsConfig(defaultPoints);
     updatePointsConfig(defaultPoints);
@@ -328,6 +329,56 @@ const Options = () => {
                 </div>
               </div>
 
+              {/* Casual 2v3 */}
+              <div className="mode-config">
+                <div className="mode-header">
+                  <span className="mode-icon">👶</span>
+                  <span className="mode-name">Casual 2v3 (Protège le Noob)</span>
+                </div>
+                <div className="points-inputs casual-grid">
+                  <div className="point-input">
+                    <label>VIP survit</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="99"
+                      value={pointsConfig.casual?.vip_win ?? 2}
+                      onChange={(e) => handlePointsChange('casual', 'vip_win', e.target.value)}
+                    />
+                  </div>
+                  <div className="point-input">
+                    <label>VIP mort</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="99"
+                      value={pointsConfig.casual?.vip_lose ?? 0}
+                      onChange={(e) => handlePointsChange('casual', 'vip_lose', e.target.value)}
+                    />
+                  </div>
+                  <div className="point-input">
+                    <label>Protecteurs</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="99"
+                      value={pointsConfig.casual?.protectors_win ?? 3}
+                      onChange={(e) => handlePointsChange('casual', 'protectors_win', e.target.value)}
+                    />
+                  </div>
+                  <div className="point-input">
+                    <label>Chasseurs</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="99"
+                      value={pointsConfig.casual?.hunters_win ?? 3}
+                      onChange={(e) => handlePointsChange('casual', 'hunters_win', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="reset-btn-container">
                 <button className="reset-points-btn" onClick={resetPointsToDefault}>
                   Réinitialiser les points par défaut
@@ -492,6 +543,13 @@ const Options = () => {
                       </span>
                     </div>
                     <div className="music-buttons">
+                      <button
+                        className="music-btn"
+                        onClick={previousTrack}
+                        title="Piste précédente"
+                      >
+                        ⏮
+                      </button>
                       <button
                         className="music-btn"
                         onClick={togglePlayPause}
@@ -760,6 +818,12 @@ const Options = () => {
         }
 
         .points-inputs.ffa-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+        }
+
+        .points-inputs.casual-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 10px;
@@ -1182,6 +1246,8 @@ const Options = () => {
           margin-bottom: 5px;
         }
       `}</style>
+
+      <AudioControls />
     </div>
   );
 };

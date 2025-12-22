@@ -4,6 +4,7 @@ import { getLeaderboard, getPlayerStats } from '../data/storage';
 import { getPlayer } from '../data/players';
 import { useTournament } from '../context/TournamentContext';
 import { useAudio } from '../context/AudioContext';
+import AudioControls from '../components/AudioControls';
 
 const LeaderboardPage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -1298,6 +1299,8 @@ const LeaderboardPage = () => {
           to { opacity: 1; }
         }
       `}</style>
+
+      <AudioControls />
     </div>
   );
 };

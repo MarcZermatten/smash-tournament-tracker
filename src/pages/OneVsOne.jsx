@@ -1,10 +1,11 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getMainPlayers, getPlayer, getAvatar, getPointsSystem } from '../data/players';
+import { getMainPlayers, getPlayer, getAvatar, getPointsSystem, getPlayerImage } from '../data/players';
 import { addMatch, getMatchesByType, undoLastMatch } from '../data/storage';
 import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
+import AudioControls from '../components/AudioControls';
 
 // Configuration par défaut du layout 1v1
 const DEFAULT_LAYOUT = {
@@ -302,6 +303,7 @@ const OneVsOne = () => {
                 <div className="slot-buttons">
                   {mainPlayers.map(playerId => {
                     const player = getPlayer(playerId);
+                    const playerImg = getPlayerImage(playerId);
                     const isSelected = player1 === playerId;
                     const isTaken = player2 === playerId;
 
@@ -313,6 +315,11 @@ const OneVsOne = () => {
                         disabled={isTaken}
                         style={{ '--player-color': player.color }}
                       >
+                        {playerImg ? (
+                          <img src={playerImg} alt="" className="slot-btn-img" />
+                        ) : (
+                          <span className="slot-btn-initial" style={{ background: player.color }}>{player.initial}</span>
+                        )}
                         {player.name}
                       </button>
                     );
@@ -327,6 +334,7 @@ const OneVsOne = () => {
                 <div className="slot-buttons">
                   {mainPlayers.map(playerId => {
                     const player = getPlayer(playerId);
+                    const playerImg = getPlayerImage(playerId);
                     const isSelected = player2 === playerId;
                     const isTaken = player1 === playerId;
 
@@ -338,6 +346,11 @@ const OneVsOne = () => {
                         disabled={isTaken}
                         style={{ '--player-color': player.color }}
                       >
+                        {playerImg ? (
+                          <img src={playerImg} alt="" className="slot-btn-img" />
+                        ) : (
+                          <span className="slot-btn-initial" style={{ background: player.color }}>{player.initial}</span>
+                        )}
                         {player.name}
                       </button>
                     );
@@ -502,6 +515,8 @@ const OneVsOne = () => {
         controls={LAYOUT_CONTROLS}
         onLayoutChange={setLayout}
       />
+
+      <AudioControls />
     </div>
   );
 };

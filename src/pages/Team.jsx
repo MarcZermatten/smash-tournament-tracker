@@ -5,6 +5,7 @@ import { addMatch, getMatchesByType, undoLastMatch } from '../data/storage';
 import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
+import AudioControls from '../components/AudioControls';
 
 // Configuration par défaut du layout Team
 const DEFAULT_LAYOUT = {
@@ -690,6 +691,8 @@ const Team = ({ mode = 'team_ff' }) => {
         controls={LAYOUT_CONTROLS}
         onLayoutChange={setLayout}
       />
+
+      <AudioControls />
     </div>
   );
 };
