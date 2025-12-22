@@ -70,6 +70,9 @@ const Home = () => {
 
   return (
     <div className="home-page">
+      {/* Ligne cyan horizontale en haut */}
+      <div className="melee-top-line" />
+
       {/* Effet de spirale lumineuse supplémentaire */}
       <div className="melee-glow" />
 
@@ -102,7 +105,7 @@ const Home = () => {
 
         {/* Panneau latéral cyan */}
         <div className="side-panel">
-          <div className="side-panel-decoration">TOURNAMENT</div>
+          <div className="side-panel-decoration">TRACKER</div>
           {activeItem.subItems.map((subItem, index) => (
             <div
               key={index}
@@ -111,6 +114,10 @@ const Home = () => {
               {subItem}
             </div>
           ))}
+          {/* Image preview en bas du panneau */}
+          <div className="side-panel-image">
+            <img src="/assets/melee/stage-select.png" alt="Preview" />
+          </div>
         </div>
       </div>
 
