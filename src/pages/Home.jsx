@@ -70,6 +70,9 @@ const Home = () => {
 
   return (
     <div className="home-page">
+      {/* Effet de spirale lumineuse supplémentaire */}
+      <div className="melee-glow" />
+
       {/* Header "Main Menu" style Melee */}
       <div className="melee-header">
         <div className="melee-logo-container">
@@ -91,13 +94,15 @@ const Home = () => {
               onClick={handleClick}
             >
               {item.label}
+              {/* Indicateur de sélection - cercle doré */}
+              <span className="select-indicator" />
             </Link>
           ))}
         </nav>
 
         {/* Panneau latéral cyan */}
         <div className="side-panel">
-          <div className="side-panel-decoration">SMASH</div>
+          <div className="side-panel-decoration">TOURNAMENT</div>
           {activeItem.subItems.map((subItem, index) => (
             <div
               key={index}
