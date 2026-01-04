@@ -54,8 +54,9 @@ const AnimatedRoutes = () => {
   const className = `page-transition-wrapper page-transition-${direction}-${transitionStage}`;
 
   return (
-    <div className={className}>
-      <Routes location={displayLocation}>
+    <div className="page-transition-container">
+      <div className={className}>
+        <Routes location={displayLocation}>
         <Route path="/" element={<Home />} />
         <Route path="/tournament" element={<TournamentSetup />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
@@ -68,6 +69,7 @@ const AnimatedRoutes = () => {
         <Route path="/players" element={<Players />} />
         <Route path="/wall-of-fame" element={<WallOfFame />} />
       </Routes>
+      </div>
     </div>
   );
 };

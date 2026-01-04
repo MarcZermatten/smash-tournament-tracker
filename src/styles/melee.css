@@ -3213,9 +3213,18 @@ body {
    PAGE TRANSITIONS - DIAMOND WIPE
    ================================ */
 
+/* Conteneur externe - empêche le scrollbar pendant transitions */
+.page-transition-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
 /* Wrapper de transition */
 .page-transition-wrapper {
   width: 100%;
+  max-width: 100vw;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -3223,6 +3232,7 @@ body {
   will-change: transform, opacity;
   backface-visibility: hidden;
   perspective: 1000px;
+  overflow: hidden;
   /* Pas de clip-path par défaut - contenu normal */
   clip-path: none;
 }
