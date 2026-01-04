@@ -10,8 +10,8 @@ import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout 1v1
 const DEFAULT_LAYOUT = {
-  frameTop: 20,
-  frameScale: 100,
+  frameTop: 22,
+  frameScale: 135,
   logoSize: 315,
   logoX: -50,
   logoY: -100,
@@ -26,18 +26,18 @@ const DEFAULT_LAYOUT = {
 
 // Contrôles disponibles pour le layout editor
 const LAYOUT_CONTROLS = [
-  { key: 'frameTop', label: 'Position Y', min: 0, max: 20, unit: 'vh', group: 'Cadre' },
-  { key: 'frameScale', label: 'Échelle', min: 70, max: 110, unit: '%', group: 'Cadre' },
-  { key: 'logoSize', label: 'Taille', min: 80, max: 350, unit: 'px', group: 'Logo' },
-  { key: 'logoX', label: 'Position X', min: -50, max: 200, unit: 'px', group: 'Logo' },
-  { key: 'logoY', label: 'Position Y', min: -100, max: 100, unit: 'px', group: 'Logo' },
-  { key: 'titleX', label: 'Décalage X', min: -300, max: 200, unit: 'px', group: 'Titre' },
+  { key: 'frameTop', label: 'Position Y', min: -20, max: 50, unit: 'vh', group: 'Cadre' },
+  { key: 'frameScale', label: 'Échelle', min: 50, max: 150, unit: '%', group: 'Cadre' },
+  { key: 'logoSize', label: 'Taille', min: 50, max: 400, unit: 'px', group: 'Logo' },
+  { key: 'logoX', label: 'Position X', min: -200, max: 300, unit: 'px', group: 'Logo' },
+  { key: 'logoY', label: 'Position Y', min: -200, max: 200, unit: 'px', group: 'Logo' },
+  { key: 'titleX', label: 'Décalage X', min: -500, max: 500, unit: 'px', group: 'Titre' },
   { key: 'titleAlign', label: 'Alignement', min: 0, max: 100, step: 50, unit: '%', group: 'Titre' },
-  { key: 'panelGap', label: 'Espacement', min: 10, max: 40, unit: 'px', group: 'Panels' },
-  { key: 'rotationWidth', label: 'Rotation', min: 150, max: 300, unit: 'px', group: 'Panels' },
-  { key: 'matchWidth', label: 'Match', min: 300, max: 500, unit: 'px', group: 'Panels' },
-  { key: 'resultsWidth', label: 'Résultats', min: 180, max: 300, unit: 'px', group: 'Panels' },
-  { key: 'fontSize', label: 'Taille texte', min: 80, max: 120, unit: '%', group: 'Texte' },
+  { key: 'panelGap', label: 'Espacement', min: 5, max: 60, unit: 'px', group: 'Panels' },
+  { key: 'rotationWidth', label: 'Rotation', min: 100, max: 400, unit: 'px', group: 'Panels' },
+  { key: 'matchWidth', label: 'Match', min: 200, max: 600, unit: 'px', group: 'Panels' },
+  { key: 'resultsWidth', label: 'Résultats', min: 150, max: 400, unit: 'px', group: 'Panels' },
+  { key: 'fontSize', label: 'Taille texte', min: 60, max: 150, unit: '%', group: 'Texte' },
 ];
 
 const OneVsOne = () => {

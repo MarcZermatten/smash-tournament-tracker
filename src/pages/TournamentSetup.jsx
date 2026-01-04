@@ -8,7 +8,31 @@ import { useTournament } from '../context/TournamentContext';
 import Icon from '../components/Icon';
 import { useAudio } from '../context/AudioContext';
 import { useModal } from '../components/Modal';
+import LayoutEditor from '../components/LayoutEditor';
 import { playMenuSelectSound } from '../utils/sounds';
+
+// Configuration par défaut du layout TournamentSetup
+const DEFAULT_LAYOUT = {
+  frameTop: 20,
+  frameScale: 128,
+  logoSize: 315,
+  logoX: -50,
+  logoY: -100,
+  titleX: -40,
+  titleAlign: 0,
+  fontSize: 100,
+};
+
+const LAYOUT_CONTROLS = [
+  { key: 'frameTop', label: 'Position Y', min: -20, max: 50, unit: 'vh', group: 'Cadre' },
+  { key: 'frameScale', label: 'Échelle', min: 50, max: 150, unit: '%', group: 'Cadre' },
+  { key: 'logoSize', label: 'Taille', min: 50, max: 400, unit: 'px', group: 'Logo' },
+  { key: 'logoX', label: 'Position X', min: -200, max: 300, unit: 'px', group: 'Logo' },
+  { key: 'logoY', label: 'Position Y', min: -200, max: 200, unit: 'px', group: 'Logo' },
+  { key: 'titleX', label: 'Décalage X', min: -500, max: 500, unit: 'px', group: 'Titre' },
+  { key: 'titleAlign', label: 'Alignement', min: 0, max: 100, step: 50, unit: '%', group: 'Titre' },
+  { key: 'fontSize', label: 'Taille texte', min: 60, max: 150, unit: '%', group: 'Texte' },
+];
 
 const TournamentSetup = () => {
   const navigate = useNavigate();
@@ -27,6 +51,7 @@ const TournamentSetup = () => {
   const [casualNoob, setCasualNoob] = useState(null); // Noob pour le mode Casual
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
 
   const fileInputRef = useRef(null);
 
@@ -316,16 +341,40 @@ const TournamentSetup = () => {
     );
   };
 
+  // Styles dynamiques basés sur le layout
+  const dynamicStyles = {
+    frame: {
+      transform: `scale(${layout.frameScale / 100})`,
+      marginTop: `${layout.frameTop}vh`,
+      transformOrigin: 'top center',
+      fontSize: `${layout.fontSize}%`,
+    },
+    logoContainer: {
+      left: `${layout.logoX}px`,
+      transform: `translateY(calc(-50% + ${layout.logoY}px))`,
+    },
+    logo: {
+      height: `${layout.logoSize}px`,
+    },
+    title: {
+      marginLeft: `${layout.titleX}px`,
+      textAlign: layout.titleAlign === 0 ? 'left' : layout.titleAlign === 100 ? 'right' : 'center',
+    },
+    header: {
+      paddingLeft: `${layout.logoX + layout.logoSize + 20}px`,
+    },
+  };
+
   return (
     <div className="home-page">
-      <div className="melee-main-frame dashboard-frame" style={{ marginTop: '10vh' }}>
+      <div className="melee-main-frame dashboard-frame" style={dynamicStyles.frame}>
         {/* Header avec Logo style menu principal */}
-        <div className="subpage-header">
-          <div className="subpage-logo-container">
-            <img src="/logo.png" alt="BFSA" className="subpage-logo" />
+        <div className="subpage-header" style={dynamicStyles.header}>
+          <div className="subpage-logo-container" style={dynamicStyles.logoContainer}>
+            <img src="/logo.png" alt="BFSA" className="subpage-logo" style={dynamicStyles.logo} />
             <div className="subpage-logo-glow"></div>
           </div>
-          <div className="subpage-title">
+          <div className="subpage-title" style={dynamicStyles.title}>
             <h1>NOUVEAU TOURNOI</h1>
             <span className="mode-subtitle">Configuration et démarrage</span>
           </div>
@@ -1106,6 +1155,13 @@ const TournamentSetup = () => {
           100% { transform: scale(1); opacity: 1; }
         }
       `}</style>
+
+      <LayoutEditor
+        pageKey="tournament"
+        defaultLayout={DEFAULT_LAYOUT}
+        controls={LAYOUT_CONTROLS}
+        onLayoutChange={setLayout}
+      />
     </div>
   );
 };

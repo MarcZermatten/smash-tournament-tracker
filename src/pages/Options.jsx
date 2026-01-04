@@ -13,8 +13,8 @@ import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout Options
 const DEFAULT_LAYOUT = {
-  frameTop: 13,
-  frameScale: 96,
+  frameTop: 20,
+  frameScale: 110,
   logoSize: 315,
   logoX: -50,
   logoY: -100,
@@ -24,14 +24,14 @@ const DEFAULT_LAYOUT = {
 };
 
 const LAYOUT_CONTROLS = [
-  { key: 'frameTop', label: 'Position Y', min: 0, max: 20, unit: 'vh', group: 'Cadre' },
-  { key: 'frameScale', label: 'Échelle', min: 70, max: 110, unit: '%', group: 'Cadre' },
-  { key: 'logoSize', label: 'Taille', min: 80, max: 350, unit: 'px', group: 'Logo' },
-  { key: 'logoX', label: 'Position X', min: -50, max: 200, unit: 'px', group: 'Logo' },
-  { key: 'logoY', label: 'Position Y', min: -100, max: 100, unit: 'px', group: 'Logo' },
-  { key: 'titleX', label: 'Décalage X', min: -300, max: 200, unit: 'px', group: 'Titre' },
+  { key: 'frameTop', label: 'Position Y', min: -20, max: 50, unit: 'vh', group: 'Cadre' },
+  { key: 'frameScale', label: 'Échelle', min: 50, max: 150, unit: '%', group: 'Cadre' },
+  { key: 'logoSize', label: 'Taille', min: 50, max: 400, unit: 'px', group: 'Logo' },
+  { key: 'logoX', label: 'Position X', min: -200, max: 300, unit: 'px', group: 'Logo' },
+  { key: 'logoY', label: 'Position Y', min: -200, max: 200, unit: 'px', group: 'Logo' },
+  { key: 'titleX', label: 'Décalage X', min: -500, max: 500, unit: 'px', group: 'Titre' },
   { key: 'titleAlign', label: 'Alignement', min: 0, max: 100, step: 50, unit: '%', group: 'Titre' },
-  { key: 'fontSize', label: 'Taille texte', min: 80, max: 120, unit: '%', group: 'Texte' },
+  { key: 'fontSize', label: 'Taille texte', min: 60, max: 150, unit: '%', group: 'Texte' },
 ];
 
 const Options = () => {

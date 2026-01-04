@@ -8,27 +8,27 @@ import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
 import { playMenuSelectSound } from '../utils/sounds';
 
-// Configuration par défaut du layout Team
-const DEFAULT_LAYOUT = {
+// Configuration par défaut du layout Team (mode-aware)
+const getDefaultLayout = (mode) => ({
   frameTop: 20,
-  frameScale: 100,
+  frameScale: mode === 'team_ff' ? 127 : 123,  // FF: 127, Team: 123
   logoSize: 315,
   logoX: -50,
   logoY: -100,
   titleX: -40,
   titleAlign: 0,
   fontSize: 104,
-};
+});
 
 const LAYOUT_CONTROLS = [
-  { key: 'frameTop', label: 'Position Y', min: 0, max: 20, unit: 'vh', group: 'Cadre' },
-  { key: 'frameScale', label: 'Échelle', min: 70, max: 110, unit: '%', group: 'Cadre' },
-  { key: 'logoSize', label: 'Taille', min: 80, max: 350, unit: 'px', group: 'Logo' },
-  { key: 'logoX', label: 'Position X', min: -50, max: 200, unit: 'px', group: 'Logo' },
-  { key: 'logoY', label: 'Position Y', min: -100, max: 100, unit: 'px', group: 'Logo' },
-  { key: 'titleX', label: 'Décalage X', min: -300, max: 200, unit: 'px', group: 'Titre' },
+  { key: 'frameTop', label: 'Position Y', min: -20, max: 50, unit: 'vh', group: 'Cadre' },
+  { key: 'frameScale', label: 'Échelle', min: 50, max: 150, unit: '%', group: 'Cadre' },
+  { key: 'logoSize', label: 'Taille', min: 50, max: 400, unit: 'px', group: 'Logo' },
+  { key: 'logoX', label: 'Position X', min: -200, max: 300, unit: 'px', group: 'Logo' },
+  { key: 'logoY', label: 'Position Y', min: -200, max: 200, unit: 'px', group: 'Logo' },
+  { key: 'titleX', label: 'Décalage X', min: -500, max: 500, unit: 'px', group: 'Titre' },
   { key: 'titleAlign', label: 'Alignement', min: 0, max: 100, step: 50, unit: '%', group: 'Titre' },
-  { key: 'fontSize', label: 'Taille texte', min: 80, max: 120, unit: '%', group: 'Texte' },
+  { key: 'fontSize', label: 'Taille texte', min: 60, max: 150, unit: '%', group: 'Texte' },
 ];
 
 const Team = ({ mode = 'team_ff' }) => {
@@ -41,7 +41,7 @@ const Team = ({ mode = 'team_ff' }) => {
   const [mainPlayers, setMainPlayers] = useState(getMainPlayers());
   const [teamRotations, setTeamRotations] = useState(getTeamRotations());
   const [pointsSystem, setPointsSystem] = useState(getPointsSystem());
-  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
+  const [layout, setLayout] = useState(getDefaultLayout(mode));
   const { playSound } = useAudio();
   const { tournament, isActive: isTournamentActive } = useTournament();
   const navigate = useNavigate();
@@ -688,7 +688,7 @@ const Team = ({ mode = 'team_ff' }) => {
       {/* Layout Editor (mode dev) */}
       <LayoutEditor
         pageKey={`team_${mode}`}
-        defaultLayout={DEFAULT_LAYOUT}
+        defaultLayout={getDefaultLayout(mode)}
         controls={LAYOUT_CONTROLS}
         onLayoutChange={setLayout}
       />

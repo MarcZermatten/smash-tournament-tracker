@@ -1,54 +1,49 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAudio } from '../context/AudioContext';
 import Icon from '../components/Icon';
 import { useTournament } from '../context/TournamentContext';
 import { useModal } from '../components/Modal';
-import { getMatchesByType, getLeaderboard } from '../data/storage';
+import { getMatchesByType } from '../data/storage';
 import { getPlayer, getMainPlayers } from '../data/players';
+import LayoutEditor from '../components/LayoutEditor';
 import { playMenuSelectSound } from '../utils/sounds';
+
+// Configuration par défaut du layout Home
+const DEFAULT_LAYOUT = {
+  frameTop: 17,
+  frameScale: 121,
+  logoSize: 336,
+  logoMarginTop: -60,
+  menuMarginLeft: 135,
+  menuMarginTop: -34,
+  btnTournamentX: -106,
+  btnTournamentY: 21,
+  panelPreviewX: -110,
+  panelPreviewY: -40,
+  menuGap: 2,
+};
+
+const LAYOUT_CONTROLS = [
+  { key: 'frameTop', label: 'Position Y', min: -20, max: 50, unit: 'vh', group: 'Cadre' },
+  { key: 'frameScale', label: 'Échelle', min: 50, max: 150, unit: '%', group: 'Cadre' },
+  { key: 'menuGap', label: 'Gap menu', min: 0.5, max: 8, step: 0.1, unit: 'rem', group: 'Cadre' },
+  { key: 'logoSize', label: 'Taille', min: 100, max: 500, unit: 'px', group: 'Logo' },
+  { key: 'logoMarginTop', label: 'Margin-top', min: -200, max: 100, unit: 'px', group: 'Logo' },
+  { key: 'menuMarginLeft', label: 'Décalage X', min: -200, max: 200, unit: 'px', group: 'Menu' },
+  { key: 'menuMarginTop', label: 'Décalage Y', min: -100, max: 100, unit: 'px', group: 'Menu' },
+  { key: 'btnTournamentX', label: 'Position X', min: -200, max: 200, unit: 'px', group: 'Bouton Tournoi' },
+  { key: 'btnTournamentY', label: 'Position Y', min: -200, max: 200, unit: 'px', group: 'Bouton Tournoi' },
+  { key: 'panelPreviewX', label: 'Position X', min: -200, max: 200, unit: 'px', group: 'Panel Preview' },
+  { key: 'panelPreviewY', label: 'Position Y', min: -200, max: 200, unit: 'px', group: 'Panel Preview' },
+];
 
 const Home = () => {
   const { playSound, toggleSound, toggleMusic, soundEnabled, musicEnabled } = useAudio();
-  const { showConfirm, showAlert } = useModal();
+  const { showConfirm } = useModal();
   const { tournament, isActive, endTournament } = useTournament();
   const [hoveredIndex, setHoveredIndex] = useState(null);
-
-  // === PANNEAU DE CONTROLE LAYOUT (mode dev) ===
-  const [devMode, setDevMode] = useState(() => localStorage.getItem('smash_dev_layout') === 'true');
-  const [layout, setLayout] = useState({
-    // Config validée par Marc
-    frameTop: 16,
-    frameScale: 110,
-    logoSize: 336,
-    logoMarginTop: -60,
-    menuMarginLeft: 57,
-    menuMarginTop: -34,
-    btnTournamentX: -96,
-    btnTournamentY: 48,
-    panelPreviewX: -100,
-    panelPreviewY: -40,
-    menuGap: 2.4,
-  });
-
-  // Écouter les changements du mode dev
-  useEffect(() => {
-    const handleDevModeChange = () => {
-      setDevMode(localStorage.getItem('smash_dev_layout') === 'true');
-    };
-    window.addEventListener('devModeChange', handleDevModeChange);
-    return () => window.removeEventListener('devModeChange', handleDevModeChange);
-  }, []);
-
-  const updateLayout = (key, value) => {
-    setLayout(prev => ({ ...prev, [key]: value }));
-  };
-
-  const copyConfig = () => {
-    const config = JSON.stringify(layout, null, 2);
-    navigator.clipboard.writeText(config);
-    showAlert('Config copiée dans le presse-papiers !');
-  };
+  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
 
   const menuItems = [
     {
@@ -225,122 +220,6 @@ const Home = () => {
 
   return (
     <div className="home-page">
-      {/* PANNEAU DE CONTROLE LAYOUT (mode dev uniquement) */}
-      {devMode && (
-        <div style={{
-          position: 'fixed', top: 10, left: 10, zIndex: 9999,
-          background: 'rgba(0,0,0,0.95)', border: '2px solid #ffd700',
-          borderRadius: 8, padding: 15, width: 300, color: '#fff',
-          fontFamily: 'monospace', fontSize: '10px',
-          maxHeight: '95vh', overflowY: 'auto'
-        }}>
-          <h3 style={{ margin: '0 0 15px', color: '#ffd700', fontSize: '14px' }}><Icon name="settings" size={16} /> Layout Editor</h3>
-
-          {/* CADRE GLOBAL */}
-          <div style={{ background: '#1a1a2e', padding: 10, borderRadius: 5, marginBottom: 10 }}>
-            <h4 style={{ margin: '0 0 8px', color: '#00d4ff' }}><Icon name="package" size={16} /> Cadre Global</h4>
-            <div style={{ marginBottom: 8 }}>
-              <label>Position Y: {layout.frameTop}vh</label>
-              <input type="range" min="0" max="50" value={layout.frameTop}
-                onChange={(e) => updateLayout('frameTop', Number(e.target.value))}
-                style={{ width: '100%' }} />
-            </div>
-            <div style={{ marginBottom: 8 }}>
-              <label>Échelle: {layout.frameScale}%</label>
-              <input type="range" min="70" max="110" value={layout.frameScale}
-                onChange={(e) => updateLayout('frameScale', Number(e.target.value))}
-                style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label>Gap: {layout.menuGap}rem</label>
-              <input type="range" min="0.5" max="5" step="0.1" value={layout.menuGap}
-                onChange={(e) => updateLayout('menuGap', Number(e.target.value))}
-                style={{ width: '100%' }} />
-            </div>
-          </div>
-
-          {/* LOGO */}
-          <div style={{ background: '#2e1a1a', padding: 10, borderRadius: 5, marginBottom: 10 }}>
-            <h4 style={{ margin: '0 0 8px', color: '#ffd700' }}><Icon name="trophy" size={16} /> Logo</h4>
-            <div style={{ marginBottom: 8 }}>
-              <label>Taille: {layout.logoSize}px</label>
-              <input type="range" min="100" max="350" value={layout.logoSize}
-                onChange={(e) => updateLayout('logoSize', Number(e.target.value))}
-                style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label>Margin-top: {layout.logoMarginTop}px</label>
-              <input type="range" min="-150" max="50" value={layout.logoMarginTop}
-                onChange={(e) => updateLayout('logoMarginTop', Number(e.target.value))}
-                style={{ width: '100%' }} />
-            </div>
-          </div>
-
-          {/* MENU BOUTONS */}
-          <div style={{ background: '#1a2e1a', padding: 10, borderRadius: 5, marginBottom: 10 }}>
-            <h4 style={{ margin: '0 0 8px', color: '#50ff90' }}><Icon name="gamepad" size={16} /> Menu Boutons</h4>
-            <div style={{ marginBottom: 8 }}>
-              <label>Décalage X: {layout.menuMarginLeft}px</label>
-              <input type="range" min="-100" max="100" value={layout.menuMarginLeft}
-                onChange={(e) => updateLayout('menuMarginLeft', Number(e.target.value))}
-                style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label>Décalage Y: {layout.menuMarginTop}px</label>
-              <input type="range" min="-50" max="50" value={layout.menuMarginTop}
-                onChange={(e) => updateLayout('menuMarginTop', Number(e.target.value))}
-                style={{ width: '100%' }} />
-            </div>
-          </div>
-
-          {/* BOUTON NOUVEAU TOURNOI */}
-          <div style={{ background: '#2e2e1a', padding: 10, borderRadius: 5, marginBottom: 10 }}>
-            <h4 style={{ margin: '0 0 8px', color: '#ffaa00' }}><Icon name="sword" size={16} /> Btn Tournoi</h4>
-            <div style={{ marginBottom: 8 }}>
-              <label>Décalage X: {layout.btnTournamentX}px</label>
-              <input type="range" min="-100" max="100" value={layout.btnTournamentX}
-                onChange={(e) => updateLayout('btnTournamentX', Number(e.target.value))}
-                style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label>Décalage Y: {layout.btnTournamentY}px</label>
-              <input type="range" min="-100" max="100" value={layout.btnTournamentY}
-                onChange={(e) => updateLayout('btnTournamentY', Number(e.target.value))}
-                style={{ width: '100%' }} />
-            </div>
-          </div>
-
-          {/* PANEL PREVIEW */}
-          <div style={{ background: '#1a1a2e', padding: 10, borderRadius: 5, marginBottom: 10 }}>
-            <h4 style={{ margin: '0 0 8px', color: '#00d4ff' }}><Icon name="clipboard" size={16} /> Panel Preview</h4>
-            <div style={{ marginBottom: 8 }}>
-              <label>Décalage X: {layout.panelPreviewX}px</label>
-              <input type="range" min="-100" max="100" value={layout.panelPreviewX}
-                onChange={(e) => updateLayout('panelPreviewX', Number(e.target.value))}
-                style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label>Décalage Y: {layout.panelPreviewY}px</label>
-              <input type="range" min="-100" max="100" value={layout.panelPreviewY}
-                onChange={(e) => updateLayout('panelPreviewY', Number(e.target.value))}
-                style={{ width: '100%' }} />
-            </div>
-          </div>
-
-          <button onClick={copyConfig} style={{
-            width: '100%', padding: 12, marginTop: 5,
-            background: '#ffd700', color: '#000', border: 'none',
-            borderRadius: 5, cursor: 'pointer', fontWeight: 'bold', fontSize: '12px'
-          }}>
-            <Icon name="clipboard" size={16} /> COPIER CONFIG
-          </button>
-
-          <pre style={{ marginTop: 10, padding: 8, background: '#111', borderRadius: 4, fontSize: 8, overflow: 'auto', maxHeight: 120 }}>
-            {JSON.stringify(layout, null, 2)}
-          </pre>
-        </div>
-      )}
-
       {/* CADRE BLEU PRINCIPAL - Englobant tout le contenu style Melee */}
       <div className="melee-main-frame" style={dynamicFrameStyle}>
         {/* Header avec Logo BFSA Ultimate Legacy */}
@@ -712,6 +591,12 @@ const Home = () => {
         }
       `}</style>
 
+      <LayoutEditor
+        pageKey="home"
+        defaultLayout={DEFAULT_LAYOUT}
+        controls={LAYOUT_CONTROLS}
+        onLayoutChange={setLayout}
+      />
     </div>
   );
 };
