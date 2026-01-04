@@ -6,6 +6,7 @@ import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
 import AudioControls from '../components/AudioControls';
+import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout FFA
 const DEFAULT_LAYOUT = {
@@ -105,7 +106,7 @@ const FFA = () => {
     });
   };
 
-  const isComplete = Object.keys(rankings).length === 4;
+  const isComplete = Object.keys(rankings).length === mainPlayers.length;
 
   const handleSubmit = useCallback(() => {
     if (!isComplete) return;
@@ -115,7 +116,7 @@ const FFA = () => {
     const results = Object.entries(rankings).map(([player, position]) => ({
       player,
       position,
-      points: pointsConfig.positions[position]
+      points: pointsConfig.positions[position] || 0 // 0 points par défaut pour les positions non définies
     }));
 
     const match = addMatch({
@@ -307,8 +308,8 @@ const FFA = () => {
                       </span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-                      {[1, 2, 3, 4].map(pos => {
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(mainPlayers.length, 4)}, 1fr)`, gap: '6px' }}>
+                      {Array.from({ length: mainPlayers.length }, (_, i) => i + 1).map(pos => {
                         const isSelected = currentPosition === pos;
                         const isTaken = Object.values(rankings).includes(pos) && !isSelected;
 
@@ -538,7 +539,7 @@ const FFA = () => {
       )}
 
       {/* Bouton retour */}
-      <Link to="/" className="back-btn">
+      <Link to="/" className="back-btn" onClick={playMenuSelectSound}>
         &larr; Menu
       </Link>
 

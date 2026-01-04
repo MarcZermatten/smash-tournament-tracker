@@ -1,12 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { useAudio } from '../context/AudioContext';
+import { playMenuSelectSound } from '../utils/sounds';
 
 const BackButton = ({ to = -1, label = 'Retour' }) => {
   const navigate = useNavigate();
-  const { playSound } = useAudio();
 
   const handleClick = () => {
-    playSound('cancel');
+    playMenuSelectSound();
     if (typeof to === 'number') {
       navigate(to);
     } else {

@@ -9,6 +9,7 @@ import {
 import { getMainPlayers } from '../data/players';
 import LayoutEditor from '../components/LayoutEditor';
 import AudioControls from '../components/AudioControls';
+import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout Options
 const DEFAULT_LAYOUT = {
@@ -714,7 +715,7 @@ const Options = () => {
 
       </div>
 
-      <Link to="/" className="back-btn">
+      <Link to="/" className="back-btn" onClick={playMenuSelectSound}>
         ← Menu
       </Link>
 

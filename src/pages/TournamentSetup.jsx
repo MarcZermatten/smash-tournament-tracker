@@ -8,6 +8,7 @@ import { useTournament } from '../context/TournamentContext';
 import { useAudio } from '../context/AudioContext';
 import { useModal } from '../components/Modal';
 import AudioControls from '../components/AudioControls';
+import { playMenuSelectSound } from '../utils/sounds';
 
 const TournamentSetup = () => {
   const navigate = useNavigate();
@@ -18,12 +19,14 @@ const TournamentSetup = () => {
   const [step, setStep] = useState(1); // 1: joueurs, 2: modes, 3: confirmation
   const [players, setPlayers] = useState({});
   const [selectedPlayers, setSelectedPlayers] = useState([]);
-  const [selectedModes, setSelectedModes] = useState(['1v1', 'ffa', 'team_ff', 'team_noff']);
+  const [selectedModes, setSelectedModes] = useState(['ffa', '1v1', 'team_ff', 'team_noff']);
   const [tournamentName, setTournamentName] = useState('');
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [showNewPlayer, setShowNewPlayer] = useState(false);
   const [casualNoob, setCasualNoob] = useState(null); // Noob pour le mode Casual
+  const [showCountdown, setShowCountdown] = useState(false);
+  const [countdown, setCountdown] = useState(3);
 
   const fileInputRef = useRef(null);
 
@@ -47,8 +50,8 @@ const TournamentSetup = () => {
   }, []);
 
   const modes = [
-    { id: '1v1', name: '1 vs 1', icon: '⚔️', desc: 'Duels classiques' },
     { id: 'ffa', name: 'Free For All', icon: '🎯', desc: '4 joueurs' },
+    { id: '1v1', name: '1 vs 1', icon: '⚔️', desc: 'Duels classiques' },
     { id: 'team_ff', name: '2v2 FF', icon: '🔥', desc: 'Équipes avec friendly fire' },
     { id: 'team_noff', name: '2v2 Team', icon: '🤝', desc: 'Équipes sans friendly fire' },
     { id: 'casual', name: 'Casual', icon: '👶', desc: '2v3 Protège le Noob (FF ON + FF OFF)' },
@@ -173,8 +176,34 @@ const TournamentSetup = () => {
       modes: selectedModes,
     });
 
-    playSound('confirm');
-    navigate('/1v1');
+    // Jouer le son du countdown immédiatement
+    const countdownSound = new Audio('/audio/3-2-1-go.mp3');
+    countdownSound.volume = 0.7;
+    countdownSound.play().catch(() => {});
+
+    // Lancer le countdown visuel 0.2s plus tard
+    setTimeout(() => {
+      setShowCountdown(true);
+      setCountdown(3);
+
+      // Animation du countdown
+      let count = 3;
+      const interval = setInterval(() => {
+        count--;
+        if (count >= 0) {
+          setCountdown(count);
+        }
+
+        if (count < 0) {
+          clearInterval(interval);
+          playMenuSelectSound();
+          // Naviguer vers le menu principal après le "GO!"
+          setTimeout(() => {
+            navigate('/');
+          }, 500);
+        }
+      }, 1000);
+    }, 200); // Décalage de 0.2s pour le visuel
   };
 
   const renderPlayerCard = (playerId) => {
@@ -462,7 +491,7 @@ const TournamentSetup = () => {
         {/* Navigation */}
         <div className="setup-navigation">
           {step > 1 && (
-            <button className="nav-btn prev" onClick={() => setStep(step - 1)}>
+            <button className="nav-btn prev" onClick={() => { playMenuSelectSound(); setStep(step - 1); }}>
               ← Retour
             </button>
           )}
@@ -470,7 +499,7 @@ const TournamentSetup = () => {
           {step < 3 ? (
             <button
               className="nav-btn next"
-              onClick={() => setStep(step + 1)}
+              onClick={() => { playMenuSelectSound(); setStep(step + 1); }}
               disabled={step === 1 && selectedPlayers.length < 2}
             >
               Suivant →
@@ -483,11 +512,25 @@ const TournamentSetup = () => {
         </div>
       </div>
 
-      <Link to="/" className="back-btn">
+      <Link to="/" className="back-btn" onClick={playMenuSelectSound}>
         ← Annuler
       </Link>
 
       {renderEditModal()}
+
+      {/* Countdown Overlay */}
+      {showCountdown && (
+        <div className="countdown-overlay">
+          <div className="countdown-flash" key={countdown}></div>
+          <div className="countdown-content">
+            <div className="countdown-number" key={countdown}>
+              {countdown > 0 ? countdown : 'GO!'}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <AudioControls />
 
       <style>{`
         .steps-indicator {
@@ -1013,9 +1056,50 @@ const TournamentSetup = () => {
           color: rgba(255, 255, 255, 0.5);
           font-style: italic;
         }
-      `}</style>
 
-      <AudioControls />
+        /* Countdown Overlay */
+        .countdown-overlay {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #000;
+          z-index: 10000;
+        }
+
+        .countdown-flash {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at center, rgba(255, 255, 255, 0.8) 0%, transparent 50%);
+          animation: flashPulse 1s ease-out;
+        }
+
+        @keyframes flashPulse {
+          0% { opacity: 1; transform: scale(0.5); }
+          50% { opacity: 0.8; }
+          100% { opacity: 0; transform: scale(2); }
+        }
+
+        .countdown-content {
+          text-align: center;
+        }
+
+        .countdown-number {
+          font-family: 'Oswald', sans-serif;
+          font-size: 15rem;
+          font-weight: 900;
+          color: var(--yellow-selected);
+          text-shadow: 0 0 100px rgba(255, 200, 0, 1), 5px 5px 0 #8b6914;
+          animation: countdownBeat 1s ease-out;
+        }
+
+        @keyframes countdownBeat {
+          0% { transform: scale(2); opacity: 0; }
+          50% { transform: scale(0.9); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 };

@@ -144,7 +144,7 @@ const DEFAULT_PLAYERS = {
   max: { id: 'max', name: 'Max', color: '#4ECDC4', initial: 'MX', avatar: 'hero', isMain: true, image: '/characters/hero.png' },
   flo: { id: 'flo', name: 'Flo', color: '#FFE66D', initial: 'F', avatar: 'mewtwo', isMain: true, image: '/characters/mewtwo.png' },
   boris: { id: 'boris', name: 'Boris', color: '#95E1D3', initial: 'B', avatar: 'ness', isMain: true, image: '/characters/ness.png' },
-  daniel: { id: 'daniel', name: 'Daniel', color: '#DDA0DD', initial: 'D', avatar: 'captain', isMain: false, image: null }
+  daniel: { id: 'daniel', name: 'Daniel', color: '#DDA0DD', initial: 'D', avatar: 'jigglypuff', isMain: false, image: '/characters/jigglypuff.png' }
 };
 
 const STORAGE_KEY = 'smash_players';
@@ -185,13 +185,23 @@ const loadPlayers = () => {
       const players = JSON.parse(saved);
       // Associer les images stockées séparément
       Object.keys(players).forEach(id => {
-        players[id].image = PLAYER_IMAGES[id] || null;
+        // Si pas d'image custom, utiliser celle de DEFAULT_PLAYERS
+        players[id].image = PLAYER_IMAGES[id] || DEFAULT_PLAYERS[id]?.image || null;
       });
       return players;
     }
   } catch (e) {
     console.error('Erreur chargement joueurs:', e);
   }
+
+  // Initialiser PLAYER_IMAGES avec les images par défaut
+  Object.keys(DEFAULT_PLAYERS).forEach(id => {
+    if (DEFAULT_PLAYERS[id].image && !PLAYER_IMAGES[id]) {
+      PLAYER_IMAGES[id] = DEFAULT_PLAYERS[id].image;
+    }
+  });
+  savePlayerImages(PLAYER_IMAGES);
+
   return { ...DEFAULT_PLAYERS };
 };
 
@@ -219,7 +229,7 @@ export const getPlayers = () => ({ ...PLAYERS });
 export const getPlayer = (id) => PLAYERS[id];
 export const getPlayerName = (id) => PLAYERS[id]?.name || id;
 export const getAvatar = (avatarId) => AVATARS.find(a => a.id === avatarId);
-export const getPlayerImage = (id) => PLAYER_IMAGES[id] || null;
+export const getPlayerImage = (id) => PLAYER_IMAGES[id] || DEFAULT_PLAYERS[id]?.image || null;
 
 // Liste des joueurs principaux (pour les tournois)
 export const getMainPlayers = () =>

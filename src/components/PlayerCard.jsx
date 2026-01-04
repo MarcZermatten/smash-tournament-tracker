@@ -16,7 +16,11 @@ const PlayerCard = ({ playerId, score, position, showPosition = true, onClick, s
         </div>
       )}
       <div className="player-avatar">
-        {player.initial}
+        {player.image ? (
+          <img src={player.image} alt={player.name} className="player-avatar-img" />
+        ) : (
+          player.initial
+        )}
       </div>
       <div className="player-info">
         <div className="player-name">{player.name}</div>

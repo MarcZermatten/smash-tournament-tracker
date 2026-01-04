@@ -27,6 +27,9 @@ const MUSIC_PLAYLIST = [
 
   // Kirby
   { id: 'dream_land', name: 'Dream Land', file: '/audio/dream_land.mp3', category: 'Kirby' },
+
+  // Divers
+  { id: 'dbz', name: 'Dragon Ball Z', file: '/audio/dbz.mp3', category: 'Divers' },
 ];
 
 const AudioContext = createContext(null);
@@ -76,6 +79,29 @@ export const AudioProvider = ({ children }) => {
     };
   }, []);
 
+  // Fonction helper pour obtenir la prochaine piste (random intelligent)
+  const getNextRandomTrack = useCallback((currentTrackId) => {
+    if (playlist.length <= 1) return null;
+
+    // Filtrer les pistes disponibles (non jouées et différente de la piste actuelle)
+    let available = playlist.filter(t =>
+      t.id !== currentTrackId && !playedTracksRef.current.includes(t.id)
+    );
+
+    // Si toutes les pistes ont été jouées (sauf la piste actuelle), réinitialiser
+    if (available.length === 0) {
+      playedTracksRef.current = currentTrackId ? [currentTrackId] : [];
+      available = playlist.filter(t => t.id !== currentTrackId);
+    }
+
+    // Choisir une piste aléatoire parmi les disponibles
+    if (available.length > 0) {
+      return available[Math.floor(Math.random() * available.length)];
+    }
+
+    return null;
+  }, [playlist]);
+
   // Fonction interne pour jouer une piste
   const playTrackInternal = useCallback((track, vol) => {
     // Arrêter proprement la musique en cours
@@ -108,28 +134,17 @@ export const AudioProvider = ({ children }) => {
     // Quand la piste se termine (si pas en loop)
     if (playlist.length > 1) {
       audio.addEventListener('ended', () => {
-        // Ajouter aux pistes jouées
-        playedTracksRef.current = [...playedTracksRef.current, track.id];
-
-        // Reset si tout joué
-        if (playedTracksRef.current.length >= playlist.length) {
-          playedTracksRef.current = [];
+        // Ajouter la piste actuelle aux pistes jouées
+        if (!playedTracksRef.current.includes(track.id)) {
+          playedTracksRef.current = [...playedTracksRef.current, track.id];
         }
 
-        // Choisir prochaine piste aléatoire
-        const available = playlist.filter(t =>
-          t.id !== track.id && !playedTracksRef.current.includes(t.id)
-        );
+        // Obtenir la prochaine piste avec le système intelligent
+        const next = getNextRandomTrack(track.id);
 
-        if (available.length > 0) {
-          const next = available[Math.floor(Math.random() * available.length)];
+        if (next) {
           setCurrentTrack(next);
           playTrackInternal(next, vol);
-        } else {
-          // Rejouer la première
-          const first = playlist[0];
-          setCurrentTrack(first);
-          playTrackInternal(first, vol);
         }
       });
     }
@@ -145,7 +160,7 @@ export const AudioProvider = ({ children }) => {
       setPendingAutoplay(true);
       setIsPlaying(false);
     });
-  }, [playlist]);
+  }, [playlist, getNextRandomTrack]);
 
   // Lancer la musique au démarrage ou après première interaction
   useEffect(() => {
@@ -247,29 +262,37 @@ export const AudioProvider = ({ children }) => {
     }
   }, [isPlaying]);
 
-  // Piste suivante (aléatoire)
+  // Piste suivante (random intelligent)
   const nextTrack = useCallback(() => {
     if (playlist.length <= 1) return;
 
-    // Choisir une piste aléatoire différente de l'actuelle
-    const available = playlist.filter(t => t.id !== currentTrack?.id);
-    if (available.length > 0) {
-      const randomTrack = available[Math.floor(Math.random() * available.length)];
-      playTrackInternal(randomTrack, volume);
+    // Ajouter la piste actuelle aux pistes jouées
+    if (currentTrack && !playedTracksRef.current.includes(currentTrack.id)) {
+      playedTracksRef.current = [...playedTracksRef.current, currentTrack.id];
     }
-  }, [playlist, currentTrack, volume, playTrackInternal]);
 
-  // Piste précédente (aléatoire)
+    // Obtenir la prochaine piste avec le système intelligent
+    const next = getNextRandomTrack(currentTrack?.id);
+    if (next) {
+      playTrackInternal(next, volume);
+    }
+  }, [playlist, currentTrack, volume, playTrackInternal, getNextRandomTrack]);
+
+  // Piste précédente (random intelligent)
   const previousTrack = useCallback(() => {
     if (playlist.length <= 1) return;
 
-    // Choisir une piste aléatoire différente de l'actuelle
-    const available = playlist.filter(t => t.id !== currentTrack?.id);
-    if (available.length > 0) {
-      const randomTrack = available[Math.floor(Math.random() * available.length)];
-      playTrackInternal(randomTrack, volume);
+    // Ajouter la piste actuelle aux pistes jouées
+    if (currentTrack && !playedTracksRef.current.includes(currentTrack.id)) {
+      playedTracksRef.current = [...playedTracksRef.current, currentTrack.id];
     }
-  }, [playlist, currentTrack, volume, playTrackInternal]);
+
+    // Obtenir la prochaine piste avec le système intelligent
+    const next = getNextRandomTrack(currentTrack?.id);
+    if (next) {
+      playTrackInternal(next, volume);
+    }
+  }, [playlist, currentTrack, volume, playTrackInternal, getNextRandomTrack]);
 
   // Arrêter la musique
   const stopMusic = useCallback(() => {
@@ -339,6 +362,12 @@ export const AudioProvider = ({ children }) => {
     }
   }, [musicEnabled, volume, playTrackInternal]);
 
+  // Jouer un fichier audio par son chemin (pour les pistes cachées)
+  const playAudioFile = useCallback((filePath, vol = 0.5) => {
+    const hiddenTrack = { id: 'hidden', name: 'Hidden Track', file: filePath };
+    playTrackInternal(hiddenTrack, vol);
+  }, [playTrackInternal]);
+
   const value = {
     soundEnabled,
     musicEnabled,
@@ -348,6 +377,7 @@ export const AudioProvider = ({ children }) => {
     playlist,
     playSound,
     playTrack,
+    playAudioFile,
     stopMusic,
     togglePlayPause,
     nextTrack,

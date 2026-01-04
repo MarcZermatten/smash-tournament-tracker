@@ -9,7 +9,7 @@ const DEFAULT_TOURNAMENT = {
   active: false,
   name: '',
   players: [], // IDs des joueurs participants
-  modes: ['1v1', 'ffa', 'team_ff', 'team_noff'], // Modes actifs
+  modes: ['ffa', '1v1', 'team_ff', 'team_noff'], // Modes actifs
   startedAt: null,
   // Suivi du mode Casual (nécessite FF ON et FF OFF)
   casualProgress: {
@@ -46,7 +46,7 @@ export const TournamentProvider = ({ children }) => {
       active: true,
       name: config.name || `Tournoi ${new Date().toLocaleDateString('fr-FR')}`,
       players: config.players || [],
-      modes: config.modes || ['1v1', 'ffa', 'team_ff'],
+      modes: config.modes || ['ffa', '1v1', 'team_ff'],
       startedAt: new Date().toISOString(),
     });
 

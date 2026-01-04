@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getMainPlayers, getPlayer } from '../data/players';
 import { addMatch, getMatchesByType, undoLastMatch, getPointsConfig } from '../data/storage';
 import { useAudio } from '../context/AudioContext';
+import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
 import AudioControls from '../components/AudioControls';
+import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout Casual
 const DEFAULT_LAYOUT = {
@@ -51,6 +53,8 @@ const Casual = () => {
   const [POINTS, setPOINTS] = useState(DEFAULT_POINTS);
   const [vipLocked, setVipLocked] = useState(false); // Le noob est-il verrouillé ?
   const { playSound } = useAudio();
+  const { tournament, isActive: isTournamentActive, getCasualProgress } = useTournament();
+  const navigate = useNavigate();
 
   // Charger la config des points depuis les settings
   useEffect(() => {
@@ -200,6 +204,34 @@ const Casual = () => {
 
   // Vérifier si la config est complète
   const isConfigComplete = vip && protectors.length === 2 && hunters.length === 2;
+
+  // Détecter si la phase Casual est terminée
+  const casualProgress = getCasualProgress?.();
+  const isCasualComplete = casualProgress?.isComplete || false;
+
+  // Déterminer le mode suivant dans le tournoi
+  const getNextMode = () => {
+    if (!isTournamentActive || !tournament.modes) return null;
+    const currentIndex = tournament.modes.indexOf('casual');
+    if (currentIndex === -1 || currentIndex >= tournament.modes.length - 1) return null;
+    return tournament.modes[currentIndex + 1];
+  };
+
+  const nextMode = getNextMode();
+  const modeRoutes = {
+    '1v1': '/1v1',
+    'ffa': '/ffa',
+    'team_ff': '/team-ff',
+    'team_noff': '/team-noff',
+    'casual': '/casual'
+  };
+  const modeNames = {
+    '1v1': '1 vs 1',
+    'ffa': 'Free For All',
+    'team_ff': '2v2 Friendly Fire',
+    'team_noff': '2v2 Team',
+    'casual': 'Casual'
+  };
 
   // Sélectionner le gagnant
   const selectWinner = (team) => {
@@ -378,71 +410,27 @@ const Casual = () => {
                   </button>
                 </div>
 
-                {/* Rotations FF ON */}
+                {/* Rotations - affichage selon l'onglet sélectionné */}
                 <div className="rotations-section">
-                  <div className="panel-header ff-on">
-                    <span className="panel-title">🔥 FF ON</span>
+                  <div className={`panel-header ${friendlyFire ? 'ff-on' : 'ff-off'}`}>
+                    <span className="panel-title">{friendlyFire ? '🔥 FF ON' : '🛡️ FF OFF'}</span>
                     <span className="panel-badge">
-                      {countRemainingRotations(true)}/{rotations.length}
+                      {countRemainingRotations(friendlyFire)}/{rotations.length}
                     </span>
                   </div>
                   <div className="rotations-list">
                     {rotations.map((rotation, idx) => {
-                      const played = isRotationPlayed(rotation, true);
+                      const played = isRotationPlayed(rotation, friendlyFire);
                       const isCurrentSelection =
-                        friendlyFire &&
                         protectors.includes(rotation.protectors[0]) &&
                         protectors.includes(rotation.protectors[1]);
 
                       return (
                         <button
-                          key={`on-${idx}`}
+                          key={`${friendlyFire ? 'on' : 'off'}-${idx}`}
                           className={`rotation-btn ${played ? 'played' : ''} ${isCurrentSelection ? 'selected' : ''}`}
                           onClick={() => {
                             if (!played) {
-                              setFriendlyFire(true);
-                              selectRotation(rotation);
-                            }
-                          }}
-                          disabled={played}
-                        >
-                          <span className="rot-team prot">
-                            🛡️ {getPlayer(rotation.protectors[0])?.name?.substring(0, 3)}-{getPlayer(rotation.protectors[1])?.name?.substring(0, 3)}
-                          </span>
-                          <span className="rot-vs">vs</span>
-                          <span className="rot-team hunt">
-                            ⚔️ {getPlayer(rotation.hunters[0])?.name?.substring(0, 3)}-{getPlayer(rotation.hunters[1])?.name?.substring(0, 3)}
-                          </span>
-                          {played && <span className="rot-done">✓</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Rotations FF OFF */}
-                <div className="rotations-section">
-                  <div className="panel-header ff-off">
-                    <span className="panel-title">🛡️ FF OFF</span>
-                    <span className="panel-badge">
-                      {countRemainingRotations(false)}/{rotations.length}
-                    </span>
-                  </div>
-                  <div className="rotations-list">
-                    {rotations.map((rotation, idx) => {
-                      const played = isRotationPlayed(rotation, false);
-                      const isCurrentSelection =
-                        !friendlyFire &&
-                        protectors.includes(rotation.protectors[0]) &&
-                        protectors.includes(rotation.protectors[1]);
-
-                      return (
-                        <button
-                          key={`off-${idx}`}
-                          className={`rotation-btn ${played ? 'played' : ''} ${isCurrentSelection ? 'selected' : ''}`}
-                          onClick={() => {
-                            if (!played) {
-                              setFriendlyFire(false);
                               selectRotation(rotation);
                             }
                           }}
@@ -673,7 +661,38 @@ const Casual = () => {
         </div>
       </div>
 
-      <Link to="/" className="back-btn">
+      {/* Bouton Mode Suivant - apparaît quand la phase Casual est terminée */}
+      {isCasualComplete && isTournamentActive && (
+        <div className="next-mode-container">
+          {nextMode ? (
+            <button
+              className="next-mode-btn"
+              onClick={() => {
+                playSound('confirm');
+                navigate(modeRoutes[nextMode]);
+              }}
+            >
+              <span className="next-mode-label">Mode suivant</span>
+              <span className="next-mode-name">{modeNames[nextMode]}</span>
+              <span className="next-mode-arrow">→</span>
+            </button>
+          ) : (
+            <button
+              className="next-mode-btn results"
+              onClick={() => {
+                playSound('confirm');
+                navigate('/leaderboard');
+              }}
+            >
+              <span className="next-mode-label">Tournoi terminé !</span>
+              <span className="next-mode-name">Voir les résultats</span>
+              <span className="next-mode-arrow">🏆</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      <Link to="/" className="back-btn" onClick={playMenuSelectSound}>
         ← Menu
       </Link>
 
@@ -1131,14 +1150,14 @@ const Casual = () => {
         /* Rotations */
         .rotations-section {
           margin-top: 10px;
+          display: flex;
+          flex-direction: column;
         }
 
         .rotations-list {
           display: flex;
           flex-direction: column;
           gap: 6px;
-          max-height: 180px;
-          overflow-y: auto;
         }
 
         .rotation-btn {

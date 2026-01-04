@@ -5,6 +5,7 @@ import { getPlayer } from '../data/players';
 import { useTournament } from '../context/TournamentContext';
 import { useAudio } from '../context/AudioContext';
 import AudioControls from '../components/AudioControls';
+import { playMenuSelectSound } from '../utils/sounds';
 
 const LeaderboardPage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -14,7 +15,7 @@ const LeaderboardPage = () => {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [showMcDoAnnounce, setShowMcDoAnnounce] = useState(false);
   const { tournament, isActive } = useTournament();
-  const { playSound } = useAudio();
+  const { playSound, playAudioFile } = useAudio();
 
   useEffect(() => {
     const update = () => {
@@ -36,9 +37,15 @@ const LeaderboardPage = () => {
   }, [isActive, tournament]);
 
   // Fonction de reveal avec total passé en paramètre pour éviter closure stale
+  // Timing précis : champion doit apparaître à exactement 10s du clic
+  // Countdown: 3s, GAME: 2s, Révélation: 2s, Délai: 3s → Total: 10s
   const doReveal = useCallback((total) => {
     setPhase('revealing');
     setRevealedCount(0);
+
+    // Calculer le délai entre chaque révélation pour durer exactement 2s
+    const totalRevealTime = 2000; // 2 secondes pour toutes les révélations
+    const delayPerPlayer = total > 1 ? totalRevealTime / total : totalRevealTime;
 
     const revealNext = (currentCount) => {
       const newCount = currentCount + 1;
@@ -46,14 +53,10 @@ const LeaderboardPage = () => {
       playSound('select');
 
       if (newCount < total) {
-        const remaining = total - newCount;
-        let delay = 800;
-        if (remaining <= 3) delay = 1200;
-        if (remaining <= 2) delay = 1800;
-        if (remaining <= 1) delay = 2500;
-
-        setTimeout(() => revealNext(newCount), delay);
+        setTimeout(() => revealNext(newCount), delayPerPlayer);
       } else {
+        // Après la dernière révélation, attendre 3s pour afficher le champion
+        // Champion apparaîtra à : 3s (countdown) + 2s (GAME) + 2s (reveals) + 3s (delay) = 10s
         setTimeout(() => {
           setPhase('champion');
           playSound('confirm');
@@ -62,11 +65,12 @@ const LeaderboardPage = () => {
             setPhase('revealed');
             setShowMcDoAnnounce(true);
           }, 4000);
-        }, 2500);
+        }, 3000); // 3 secondes de suspense avant le champion
       }
     };
 
-    setTimeout(() => revealNext(0), 1000);
+    // Démarrer immédiatement la première révélation
+    setTimeout(() => revealNext(0), 0);
   }, [playSound]);
 
   const startReveal = useCallback(() => {
@@ -74,6 +78,16 @@ const LeaderboardPage = () => {
 
     const total = leaderboard.length; // Capturer la valeur maintenant
     playSound('select');
+
+    // Lancer la musique One Punch Man (musique cachée, contrôlable via AudioContext)
+    playAudioFile('/audio/one_punch_man.mp3', 0.5);
+
+    // Jouer le son homerun après 8.7 secondes (aligné avec le moment épique)
+    setTimeout(() => {
+      const homerunSound = new Audio('/audio/ssbhomerun.mp3');
+      homerunSound.volume = 0.7;
+      homerunSound.play().catch(() => {});
+    }, 8700);
 
     setPhase('countdown');
     setCountdown(3);
@@ -86,14 +100,18 @@ const LeaderboardPage = () => {
 
       if (count <= 0) {
         clearInterval(countdownInterval);
-        // Drumroll
+        // GAME phase - jouer l'annonce "GAME!"
+        const gameSound = new Audio('/audio/ssbannouncer-game.mp3');
+        gameSound.volume = 0.8;
+        gameSound.play().catch(() => {});
+
         setPhase('drumroll');
         setTimeout(() => {
           doReveal(total); // Passer total directement
         }, 2000);
       }
     }, 1000);
-  }, [leaderboard.length, playSound, doReveal]);
+  }, [leaderboard.length, playSound, playAudioFile, doReveal]);
 
   const resetReveal = () => {
     setPhase('intro');
@@ -193,10 +211,10 @@ const LeaderboardPage = () => {
             </div>
 
             <div className="fighters-preview">
-              {leaderboard.slice(0, 4).map((entry, idx) => {
+              {leaderboard.map((entry, idx) => {
                 const player = getPlayer(entry.player);
                 return (
-                  <div key={entry.player} className="fighter-preview" style={{ '--delay': `${idx * 0.2}s` }}>
+                  <div key={entry.player} className="fighter-preview" style={{ '--delay': `${idx * 0.1}s` }}>
                     {player?.image ? (
                       <img src={player.image} alt="" />
                     ) : (
@@ -209,40 +227,42 @@ const LeaderboardPage = () => {
 
             <button className="start-reveal-btn" onClick={startReveal}>
               <span className="btn-glow"></span>
+              <span className="btn-shine"></span>
               <span className="btn-content">
-                <span className="btn-icon">⚔️</span>
-                <span className="btn-text">RÉVÉLER LE CHAMPION</span>
+                <span className="btn-text">RÉVÉLER LES RÉSULTATS</span>
               </span>
             </button>
 
             <div className="combatants-count">{leaderboard.length} COMBATTANTS</div>
           </div>
+          <Link to="/" className="back-btn-intro" onClick={playMenuSelectSound}>← Retour au menu</Link>
         </div>
       )}
 
       {/* PHASE COUNTDOWN */}
       {phase === 'countdown' && (
         <div className="countdown-phase">
-          <div className="countdown-bg"></div>
+          <div className="countdown-flash" key={countdown}></div>
           <div className="countdown-content">
-            <div className="countdown-number">{countdown}</div>
-            <div className="countdown-text">PRÉPAREZ-VOUS</div>
+            <div className="countdown-number" key={countdown}>{countdown > 0 ? countdown : 'GO!'}</div>
           </div>
         </div>
       )}
 
-      {/* PHASE DRUMROLL */}
+      {/* PHASE GAME (ex-drumroll) */}
       {phase === 'drumroll' && (
-        <div className="drumroll-phase">
-          <div className="drumroll-logo">
-            <img src="/logo.png" alt="BFSA" />
+        <div className="game-phase">
+          <div className="game-flash"></div>
+          <div className="game-content">
+            <div className="game-text">GAME!</div>
           </div>
-          <div className="drumroll-text">QUI SERA LE CHAMPION ?</div>
-          <div className="drumroll-icons">
-            <span>🥁</span><span>🥁</span><span>🥁</span>
-          </div>
-          <div className="suspense-bar">
-            <div className="suspense-fill"></div>
+          <div className="suspense-particles">
+            {[...Array(20)].map((_, i) => (
+              <div key={i} className="game-particle" style={{
+                '--x': `${Math.random() * 100}%`,
+                '--delay': `${Math.random() * 0.8}s`
+              }}></div>
+            ))}
           </div>
         </div>
       )}
@@ -266,7 +286,8 @@ const LeaderboardPage = () => {
                 </div>
               </div>
               <div className="champion-content">
-                <div className="crown-icon">👑</div>
+                {/* TODO: Remplacer par asset "WINNER!" officiel */}
+                <div className="winner-banner">WINNER</div>
                 <div className="champion-avatar-container">
                   {winner?.image ? (
                     <img src={winner.image} alt={winner.name} className="champion-avatar" />
@@ -295,7 +316,7 @@ const LeaderboardPage = () => {
             {/* McDo Announce */}
             {showMcDoAnnounce && leaderboard.length >= 2 && (
               <div className="mcdo-announce">
-                <div className="mcdo-icon">🍔🍟</div>
+                <div className="mcdo-icon-text">McDO</div>
                 <div className="mcdo-text">
                   <span className="mcdo-title">CORVÉE McDO !</span>
                   <span className="mcdo-names">{lastTwoPlayers}</span>
@@ -323,7 +344,7 @@ const LeaderboardPage = () => {
                     {revealed ? (
                       <>
                         <div className={`rank rank-${rank}`}>
-                          {rank === 1 ? '👑' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
+                          {rank === 1 ? '1ST' : rank === 2 ? '2ND' : rank === 3 ? '3RD' : `#${rank}`}
                         </div>
                         <div className="player-info">
                           {player?.image ? (
@@ -340,7 +361,7 @@ const LeaderboardPage = () => {
                           <span className="score-value">{entry.total}</span>
                           <span className="score-label">PTS</span>
                         </div>
-                        {isLoser && phase === 'revealed' && <div className="loser-badge">🍔</div>}
+                        {isLoser && phase === 'revealed' && <div className="loser-badge">McD</div>}
                       </>
                     ) : (
                       <div className="hidden-content">
@@ -364,13 +385,13 @@ const LeaderboardPage = () => {
       {leaderboard.length === 0 && (
         <div className="empty-state">
           <img src="/logo.png" alt="BFSA" className="empty-logo" />
-          <span className="empty-icon">🎮</span>
+          <div className="empty-icon"></div>
           <p>Aucun score enregistré</p>
           <p className="empty-hint">Jouez quelques parties pour voir le classement !</p>
         </div>
       )}
 
-      <Link to="/" className="back-btn">← Menu</Link>
+      <Link to="/" className="back-btn" onClick={playMenuSelectSound}>← Menu</Link>
       {renderPlayerModal()}
 
       <style>{`
@@ -457,7 +478,7 @@ const LeaderboardPage = () => {
         }
 
         .legendary-logo {
-          height: 200px;
+          height: 400px;
           width: auto;
           filter: drop-shadow(0 10px 50px rgba(255, 200, 0, 0.5));
           animation: logoFloat 3s ease-in-out infinite;
@@ -473,8 +494,8 @@ const LeaderboardPage = () => {
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 350px;
-          height: 350px;
+          width: 700px;
+          height: 700px;
           background: radial-gradient(circle, rgba(255, 200, 0, 0.3) 0%, transparent 70%);
           border-radius: 50%;
           animation: glowPulse 2s ease-in-out infinite;
@@ -490,8 +511,8 @@ const LeaderboardPage = () => {
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 300px;
-          height: 300px;
+          width: 600px;
+          height: 600px;
           border: 2px solid rgba(255, 200, 0, 0.3);
           border-radius: 50%;
           animation: ringExpand 2s ease-out infinite;
@@ -606,6 +627,25 @@ const LeaderboardPage = () => {
           to { left: 100%; }
         }
 
+        .btn-shine {
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: conic-gradient(
+            from 0deg,
+            transparent 0deg,
+            rgba(255, 255, 255, 0.1) 60deg,
+            transparent 120deg
+          );
+          animation: btnRotate 3s linear infinite;
+        }
+
+        @keyframes btnRotate {
+          to { transform: rotate(360deg); }
+        }
+
         .btn-content {
           position: relative;
           display: flex;
@@ -633,6 +673,29 @@ const LeaderboardPage = () => {
           letter-spacing: 0.3em;
         }
 
+        .back-btn-intro {
+          position: absolute;
+          top: 30px;
+          left: 30px;
+          padding: 12px 24px;
+          background: rgba(0, 0, 0, 0.6);
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-radius: 8px;
+          color: white;
+          font-family: 'Oswald', sans-serif;
+          font-size: 1rem;
+          text-decoration: none;
+          transition: all 0.2s;
+          z-index: 10;
+        }
+
+        .back-btn-intro:hover {
+          background: rgba(0, 0, 0, 0.8);
+          border-color: var(--cyan-light);
+          color: var(--cyan-light);
+          transform: translateX(-5px);
+        }
+
         /* ==================== COUNTDOWN ==================== */
         .countdown-phase {
           position: fixed;
@@ -640,14 +703,21 @@ const LeaderboardPage = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #030508;
+          background: #000;
           z-index: 100;
         }
 
-        .countdown-bg {
+        .countdown-flash {
           position: absolute;
           inset: 0;
-          background: radial-gradient(circle at center, rgba(255, 200, 0, 0.1) 0%, transparent 70%);
+          background: radial-gradient(circle at center, rgba(255, 255, 255, 0.8) 0%, transparent 50%);
+          animation: flashPulse 1s ease-out;
+        }
+
+        @keyframes flashPulse {
+          0% { opacity: 1; transform: scale(0.5); }
+          50% { opacity: 0.8; }
+          100% { opacity: 0; transform: scale(2); }
         }
 
         .countdown-content {
@@ -676,85 +746,108 @@ const LeaderboardPage = () => {
           letter-spacing: 0.3em;
         }
 
-        /* ==================== DRUMROLL ==================== */
-        .drumroll-phase {
+        /* ==================== GAME PHASE (ex-DRUMROLL) ==================== */
+        .game-phase {
           position: fixed;
           inset: 0;
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
-          background: #030508;
+          background: #000;
           z-index: 100;
-        }
-
-        .drumroll-logo {
-          margin-bottom: 30px;
-          animation: drumrollShake 0.1s infinite;
-        }
-
-        .drumroll-logo img {
-          height: 150px;
-          filter: drop-shadow(0 0 30px rgba(255, 200, 0, 0.8));
-        }
-
-        @keyframes drumrollShake {
-          0%, 100% { transform: translateX(-2px) rotate(-1deg); }
-          50% { transform: translateX(2px) rotate(1deg); }
-        }
-
-        .drumroll-text {
-          font-family: 'Oswald', sans-serif;
-          font-size: 2.5rem;
-          font-weight: 700;
-          color: var(--yellow-selected);
-          text-shadow: 0 0 30px rgba(255, 200, 0, 0.8);
-          margin-bottom: 20px;
-          animation: drumrollText 0.5s infinite alternate;
-        }
-
-        @keyframes drumrollText {
-          from { transform: scale(1); }
-          to { transform: scale(1.05); }
-        }
-
-        .drumroll-icons {
-          display: flex;
-          gap: 20px;
-          font-size: 3rem;
-          margin-bottom: 30px;
-        }
-
-        .drumroll-icons span {
-          animation: drumBeat 0.15s infinite alternate;
-        }
-
-        .drumroll-icons span:nth-child(2) { animation-delay: 0.05s; }
-        .drumroll-icons span:nth-child(3) { animation-delay: 0.1s; }
-
-        @keyframes drumBeat {
-          from { transform: rotate(-15deg) scale(1); }
-          to { transform: rotate(15deg) scale(1.2); }
-        }
-
-        .suspense-bar {
-          width: 300px;
-          height: 8px;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
           overflow: hidden;
         }
 
-        .suspense-fill {
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, var(--cyan), var(--yellow-selected));
-          animation: suspenseFill 2s linear;
+        .game-flash {
+          position: absolute;
+          inset: 0;
+          background: white;
+          animation: gameFlash 0.5s ease-out;
         }
 
-        @keyframes suspenseFill {
-          from { transform: translateX(-100%); }
-          to { transform: translateX(0); }
+        @keyframes gameFlash {
+          0% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+
+        .game-content {
+          position: relative;
+          z-index: 2;
+          text-align: center;
+        }
+
+        .game-text {
+          font-family: 'Oswald', sans-serif;
+          font-size: 12rem;
+          font-weight: 900;
+          color: #fff;
+          text-shadow:
+            0 0 40px rgba(255, 50, 50, 0.8),
+            0 0 80px rgba(255, 100, 100, 0.5),
+            8px 8px 0 #000,
+            -4px -4px 0 #ff0000;
+          letter-spacing: 0.1em;
+          animation: gameTextReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes gameTextReveal {
+          0% {
+            transform: scale(0) rotate(-15deg);
+            opacity: 0;
+          }
+          60% {
+            transform: scale(1.2) rotate(5deg);
+          }
+          100% {
+            transform: scale(1) rotate(0deg);
+            opacity: 1;
+          }
+        }
+
+        .game-set-text {
+          font-family: 'Oswald', sans-serif;
+          font-size: 4rem;
+          font-weight: 700;
+          color: var(--yellow-selected);
+          text-shadow: 0 0 30px rgba(255, 200, 0, 0.8), 3px 3px 0 #000;
+          letter-spacing: 0.3em;
+          margin-top: 20px;
+          animation: setTextAppear 0.5s 0.5s both;
+        }
+
+        @keyframes setTextAppear {
+          0% { transform: translateY(30px); opacity: 0; }
+          100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .suspense-particles {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+
+        .game-particle {
+          position: absolute;
+          left: var(--x);
+          bottom: -10%;
+          width: 3px;
+          height: 20px;
+          background: linear-gradient(180deg, rgba(255, 200, 0, 1), rgba(255, 100, 0, 0));
+          animation: particleShoot 1.5s var(--delay) ease-out;
+        }
+
+        @keyframes particleShoot {
+          0% {
+            transform: translateY(0) scale(0);
+            opacity: 0;
+          }
+          20% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(-120vh) scale(1);
+            opacity: 0;
+          }
         }
 
         /* ==================== CHAMPION OVERLAY ==================== */
@@ -831,14 +924,24 @@ const LeaderboardPage = () => {
           100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
 
-        .crown-icon {
+        .winner-banner {
+          font-family: 'Oswald', sans-serif;
           font-size: 5rem;
-          animation: crownBounce 0.5s infinite alternate;
+          font-weight: 900;
+          color: #fff;
+          text-shadow:
+            0 0 60px rgba(255, 215, 0, 1),
+            0 0 100px rgba(255, 200, 0, 0.8),
+            8px 8px 0 #000,
+            -4px -4px 0 #ffd700;
+          letter-spacing: 0.2em;
+          margin-bottom: 20px;
+          animation: winnerBounce 1s ease-in-out infinite;
         }
 
-        @keyframes crownBounce {
-          from { transform: translateY(0); }
-          to { transform: translateY(-10px); }
+        @keyframes winnerBounce {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-15px) scale(1.05); }
         }
 
         .champion-avatar-container {
@@ -967,7 +1070,18 @@ const LeaderboardPage = () => {
           100% { transform: scale(1); opacity: 1; }
         }
 
-        .mcdo-icon { font-size: 2.5rem; animation: mcDoWiggle 0.4s infinite; }
+        .mcdo-icon-text {
+          font-family: 'Oswald', sans-serif;
+          font-size: 2rem;
+          font-weight: 900;
+          color: #ff0000;
+          background: linear-gradient(180deg, #ffeb3b 0%, #ff9800 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+          animation: mcDoWiggle 0.4s infinite;
+        }
         @keyframes mcDoWiggle { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
         .mcdo-text { display: flex; flex-direction: column; }
         .mcdo-title { font-family: 'Oswald', sans-serif; font-size: 1.2rem; font-weight: 700; color: #ff6b6b; }

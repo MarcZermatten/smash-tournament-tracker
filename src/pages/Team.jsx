@@ -6,6 +6,7 @@ import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
 import AudioControls from '../components/AudioControls';
+import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout Team
 const DEFAULT_LAYOUT = {
@@ -680,7 +681,7 @@ const Team = ({ mode = 'team_ff' }) => {
       )}
 
       {/* Bouton retour */}
-      <Link to="/" className="back-btn">
+      <Link to="/" className="back-btn" onClick={playMenuSelectSound}>
         &larr; Menu
       </Link>
 

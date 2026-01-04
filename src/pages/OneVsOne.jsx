@@ -6,6 +6,7 @@ import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
 import AudioControls from '../components/AudioControls';
+import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout 1v1
 const DEFAULT_LAYOUT = {
@@ -504,7 +505,7 @@ const OneVsOne = () => {
       )}
 
       {/* Bouton retour */}
-      <Link to="/" className="back-btn">
+      <Link to="/" className="back-btn" onClick={playMenuSelectSound}>
         &larr; Menu
       </Link>
 

@@ -6,6 +6,7 @@ import { useModal } from '../components/Modal';
 import { getMatchesByType, getLeaderboard } from '../data/storage';
 import { getPlayer, getMainPlayers } from '../data/players';
 import AudioControls from '../components/AudioControls';
+import { playMenuSelectSound } from '../utils/sounds';
 
 const Home = () => {
   const { playSound, toggleSound, toggleMusic, soundEnabled, musicEnabled } = useAudio();
@@ -51,16 +52,16 @@ const Home = () => {
 
   const menuItems = [
     {
-      to: '/1v1',
-      label: '1v1',
-      description: 'Matchs en tête-à-tête avec rotation!',
-      subItems: ['Nouveau duel', 'Rotation', 'Historique']
-    },
-    {
       to: '/ffa',
       label: 'FFA',
       description: 'Free For All - 4 joueurs!',
       subItems: ['Nouveau match', 'Historique', 'Règles']
+    },
+    {
+      to: '/1v1',
+      label: '1v1',
+      description: 'Matchs en tête-à-tête avec rotation!',
+      subItems: ['Nouveau duel', 'Rotation', 'Historique']
     },
     {
       to: '/team-ff',
@@ -116,10 +117,11 @@ const Home = () => {
   };
 
   const handleClick = () => {
-    playSound('confirm');
+    playMenuSelectSound();
   };
 
   const handleEndTournament = () => {
+    playMenuSelectSound();
     showConfirm('Terminer le tournoi en cours ?', () => {
       endTournament();
       playSound('confirm');
@@ -386,7 +388,7 @@ const Home = () => {
               </div>
             ) : (
               <Link to="/tournament" className="start-tournament-btn" onClick={handleClick} style={dynamicBtnTournamentStyle}>
-                <span className="btn-icon">⚔️</span>
+                <span className="btn-icon smash-logo-icon"></span>
                 <span className="btn-text">NOUVEAU TOURNOI</span>
               </Link>
             )}
@@ -528,6 +530,17 @@ const Home = () => {
 
         .start-tournament-btn .btn-icon {
           font-size: 1.2rem;
+        }
+
+        .start-tournament-btn .btn-icon.smash-logo-icon {
+          display: inline-block;
+          width: 24px;
+          height: 24px;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CclipPath id='c-btn'%3E%3Ccircle cx='50' cy='50' r='50'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23c-btn)'%3E%3Crect x='0' y='0' width='30' height='62' fill='%23ffd800'/%3E%3Crect x='0' y='70' width='30' height='30' fill='%23ffd800'/%3E%3Crect x='48' y='0' width='52' height='62' fill='%23ffd800'/%3E%3Crect x='48' y='70' width='52' height='30' fill='%23ffd800'/%3E%3C/g%3E%3C/svg%3E");
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6));
         }
 
         .start-tournament-btn .btn-text {

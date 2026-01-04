@@ -6,6 +6,7 @@ import { useAudio } from '../context/AudioContext';
 import { useModal } from '../components/Modal';
 import LayoutEditor from '../components/LayoutEditor';
 import AudioControls from '../components/AudioControls';
+import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout Wall of Fame
 const DEFAULT_LAYOUT = {
@@ -446,7 +447,7 @@ const WallOfFame = () => {
         </div>
       </div>
 
-      <Link to="/" className="back-btn">
+      <Link to="/" className="back-btn" onClick={playMenuSelectSound}>
         ← Menu
       </Link>
 
