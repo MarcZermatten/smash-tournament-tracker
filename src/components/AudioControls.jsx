@@ -1,4 +1,5 @@
 import { useAudio } from '../context/AudioContext';
+import Icon from './Icon';
 
 const AudioControls = () => {
   const {
@@ -16,14 +17,14 @@ const AudioControls = () => {
         onClick={toggleSound}
         title={soundEnabled ? 'Couper les sons' : 'Activer les sons'}
       >
-        {soundEnabled ? '🔊' : '🔇'}
+        <Icon name={soundEnabled ? 'volumeOn' : 'volumeOff'} size={18} />
       </button>
       <button
         className={`audio-ctrl-btn small ${musicEnabled ? '' : 'off'}`}
         onClick={toggleMusic}
         title={musicEnabled ? 'Couper la musique' : 'Activer la musique'}
       >
-        {musicEnabled ? '🎵' : '🎵'}
+        <Icon name={musicEnabled ? 'music' : 'musicOff'} size={18} />
       </button>
 
       {/* Séparateur */}
@@ -36,7 +37,7 @@ const AudioControls = () => {
         title="Piste précédente"
         disabled={!musicEnabled}
       >
-        ⏮
+        <Icon name="skipBack" size={20} />
       </button>
       <button
         className="audio-ctrl-btn"
@@ -44,7 +45,7 @@ const AudioControls = () => {
         title={isPlaying ? 'Pause' : 'Play'}
         disabled={!musicEnabled}
       >
-        {isPlaying ? '⏸' : '▶'}
+        <Icon name={isPlaying ? 'pause' : 'play'} size={18} />
       </button>
       <button
         className="audio-ctrl-btn"
@@ -52,7 +53,7 @@ const AudioControls = () => {
         title="Piste suivante"
         disabled={!musicEnabled}
       >
-        ⏭
+        <Icon name="skipForward" size={20} />
       </button>
 
       <style>{`

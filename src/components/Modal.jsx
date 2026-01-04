@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
+import Icon from './Icon';
 
 // Context pour les modals
 const ModalContext = createContext();
@@ -63,7 +64,7 @@ const Modal = ({ modal }) => {
     <div className="modal-overlay" onClick={modal.onCancel || modal.onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-icon">
-          {modal.type === 'confirm' ? '⚠️' : 'ℹ️'}
+          {modal.type === 'confirm' ? <Icon name="warning" size={16} /> : <Icon name="info" size={16} />}
         </div>
         <div className="modal-message">{modal.message}</div>
         <div className="modal-actions">

@@ -3208,3 +3208,215 @@ body {
   border-radius: 3px;
   color: var(--cyan-light);
 }
+
+/* ================================
+   PAGE TRANSITIONS - DIAMOND WIPE
+   ================================ */
+
+/* Wrapper de transition */
+.page-transition-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
+  /* Pas de clip-path par défaut - contenu normal */
+  clip-path: none;
+}
+
+/* ================================
+   DIRECTION FORWARD (Home → Sous-page)
+   ================================ */
+
+/* Exit: Page sort vers la gauche avec diamond collapse */
+.page-transition-forward-exit {
+  position: absolute;
+  width: 100%;
+  animation: diamondCollapseLeft 350ms cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.page-transition-forward-exit-active {
+  opacity: 1;
+}
+
+.page-transition-forward-exit-done {
+  opacity: 0;
+}
+
+/* Enter: Nouvelle page entre par la droite avec diamond expand */
+.page-transition-forward-enter {
+  animation: diamondExpandRight 350ms cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.page-transition-forward-enter-active {
+  opacity: 1;
+}
+
+.page-transition-forward-enter-done {
+  opacity: 1;
+}
+
+/* ================================
+   DIRECTION BACKWARD (Sous-page → Home)
+   ================================ */
+
+/* Exit: Page sort vers la droite avec diamond collapse */
+.page-transition-backward-exit {
+  position: absolute;
+  width: 100%;
+  animation: diamondCollapseRight 350ms cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.page-transition-backward-exit-active {
+  opacity: 1;
+}
+
+.page-transition-backward-exit-done {
+  opacity: 0;
+}
+
+/* Enter: Nouvelle page entre par la gauche avec diamond expand */
+.page-transition-backward-enter {
+  animation: diamondExpandLeft 350ms cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.page-transition-backward-enter-active {
+  opacity: 1;
+}
+
+.page-transition-backward-enter-done {
+  opacity: 1;
+}
+
+/* ================================
+   KEYFRAMES DIAMOND WIPE
+   ================================ */
+
+/* Collapse vers la gauche */
+@keyframes diamondCollapseLeft {
+  0% {
+    clip-path: none;
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    clip-path: polygon(
+      0% 50%,
+      0% 50%,
+      0% 50%,
+      0% 50%
+    );
+    transform: translateX(-30%) scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* Expand depuis la droite */
+@keyframes diamondExpandRight {
+  0% {
+    clip-path: polygon(
+      100% 50%,
+      100% 50%,
+      100% 50%,
+      100% 50%
+    );
+    transform: translateX(30%) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    clip-path: none;
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Collapse vers la droite */
+@keyframes diamondCollapseRight {
+  0% {
+    clip-path: none;
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    clip-path: polygon(
+      100% 50%,
+      100% 50%,
+      100% 50%,
+      100% 50%
+    );
+    transform: translateX(30%) scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* Expand depuis la gauche */
+@keyframes diamondExpandLeft {
+  0% {
+    clip-path: polygon(
+      0% 50%,
+      0% 50%,
+      0% 50%,
+      0% 50%
+    );
+    transform: translateX(-30%) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    clip-path: none;
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ================================
+   OPTIMISATIONS PERFORMANCE
+   ================================ */
+
+/* Isolation des éléments fixes */
+.back-btn,
+.audio-controls {
+  will-change: auto;
+  isolation: isolate;
+}
+
+/* ================================
+   ICONES SVG
+   ================================ */
+
+/* Icônes blanches par défaut pour visibilité sur fond bleu */
+.icon {
+  color: var(--text-white);
+  flex-shrink: 0;
+}
+
+/* Icônes jaunes pour les éléments sélectionnés ou importants */
+.melee-button:hover .icon,
+.melee-button.selected .icon,
+.tab.active .icon {
+  color: var(--yellow-selected);
+}
+
+/* Icônes dans les titres - jaune doré */
+h1 .icon,
+h2 .icon,
+h3 .icon,
+h4 .icon,
+.panel-title .icon,
+.section-title .icon {
+  color: var(--gold-light);
+}
+
+/* Icônes dans les badges - couleurs spéciales */
+.role-badge .icon,
+.winner-icon .icon {
+  color: var(--cyan-light);
+}
+
+/* Icônes dans les stats - blanc */
+.stat-value .icon,
+.record-item .icon {
+  color: var(--text-white);
+}

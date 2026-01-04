@@ -15,9 +15,9 @@ import {
   SSBU_CHARACTERS
 } from '../data/players';
 import { useAudio } from '../context/AudioContext';
+import Icon from '../components/Icon';
 import { useModal } from '../components/Modal';
 import LayoutEditor from '../components/LayoutEditor';
-import AudioControls from '../components/AudioControls';
 import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout Players
@@ -291,7 +291,7 @@ const Players = () => {
                                 className="remove-image-btn"
                                 onClick={() => handleRemoveImage(player.id)}
                               >
-                                ✕
+                                <Icon name="close" size={14} />
                               </button>
                             </div>
                           ) : (
@@ -301,7 +301,7 @@ const Players = () => {
                             className="upload-btn"
                             onClick={() => fileInputRef.current?.click()}
                           >
-                            📷 {playerImage ? 'Changer' : 'Ajouter'} une image
+                            <Icon name="camera" size={16} /> {playerImage ? 'Changer' : 'Ajouter'} une image
                           </button>
                           <input
                             ref={fileInputRef}
@@ -410,7 +410,7 @@ const Players = () => {
                         className="remove-image-btn"
                         onClick={() => setNewPlayerImage(null)}
                       >
-                        ✕
+                        <Icon name="close" size={14} />
                       </button>
                     </div>
                   ) : (
@@ -420,7 +420,7 @@ const Players = () => {
                     className="upload-btn"
                     onClick={() => newFileInputRef.current?.click()}
                   >
-                    📷 {newPlayerImage ? 'Changer' : 'Ajouter'} une image
+                    <Icon name="camera" size={16} /> {newPlayerImage ? 'Changer' : 'Ajouter'} une image
                   </button>
                   <input
                     ref={newFileInputRef}
@@ -523,7 +523,6 @@ const Players = () => {
         onLayoutChange={setLayout}
       />
 
-      <AudioControls />
 
       <style>{`
         .player-row-avatar-img {

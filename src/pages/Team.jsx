@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getMainPlayers, getTeamRotations, getPointsSystem, getPlayer } from '../data/players';
+import Icon from '../components/Icon';
 import { addMatch, getMatchesByType, undoLastMatch } from '../data/storage';
 import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
-import AudioControls from '../components/AudioControls';
 import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout Team
@@ -61,7 +61,7 @@ const Team = ({ mode = 'team_ff' }) => {
   }, []);
 
   const config = mode === 'team_ff' ? pointsSystem.team_ff : pointsSystem.team_noff;
-  const modeIcon = mode === 'team_ff' ? '🔥' : '🤝';
+  const modeIcon = mode === 'team_ff' ? 'fire' : 'handshake';
   const modeName = mode === 'team_ff' ? '2v2 FF' : '2v2 Team';
 
   const matches = getMatchesByType(mode);
@@ -249,7 +249,7 @@ const Team = ({ mode = 'team_ff' }) => {
             <div className="subpage-logo-glow"></div>
           </div>
           <div className="subpage-title" style={dynamicStyles.title}>
-            <h1>{modeIcon} {modeName}</h1>
+            <h1><Icon name={modeIcon} size={24} /> {modeName}</h1>
             <span className="mode-subtitle">{mode === 'team_ff' ? 'Équipes avec Friendly Fire' : 'Équipes sans Friendly Fire'}</span>
           </div>
         </div>
@@ -337,7 +337,7 @@ const Team = ({ mode = 'team_ff' }) => {
                 {/* Message si toutes les rotations sont terminées */}
                 {allRotationsComplete && (
                   <div className="rotation-complete-mini">
-                    ✓ Toutes les rotations jouées !
+                    <Icon name="check" size={14} /> Toutes les rotations jouées !
                   </div>
                 )}
 
@@ -357,7 +357,7 @@ const Team = ({ mode = 'team_ff' }) => {
                 onClick={() => { setUseCustomTeams(false); clearSelection(); }}
                 style={{ marginTop: '10px' }}
               >
-                <span style={{ color: 'var(--cyan-light)' }}>← Rotations</span>
+                <span style={{ color: 'var(--cyan-light)' }}><Icon name="arrowLeft" size={14} /> Rotations</span>
               </button>
             )}
           </div>
@@ -525,7 +525,7 @@ const Team = ({ mode = 'team_ff' }) => {
               <span className="panel-title">Classement {modeName}</span>
               {matches.length > 0 && (
                 <button className="edit-results-btn" onClick={handleUndo} title="Annuler le dernier match">
-                  ↩
+                  <Icon name="undo" size={16} />
                 </button>
               )}
             </div>
@@ -593,7 +593,7 @@ const Team = ({ mode = 'team_ff' }) => {
                     gap: '6px',
                     flexWrap: 'wrap'
                   }}>
-                    <span style={{ color: 'var(--yellow-selected)' }}>🏆</span>
+                    <span style={{ color: 'var(--yellow-selected)' }}><Icon name="trophy" size={16} /></span>
                     {match.winners?.map(p => (
                       <span key={p} style={{ color: getPlayer(p)?.color }}>
                         {getPlayer(p)?.name}
@@ -662,7 +662,7 @@ const Team = ({ mode = 'team_ff' }) => {
             >
               <span className="next-mode-label">Mode suivant</span>
               <span className="next-mode-name">{modeNames[nextMode]}</span>
-              <span className="next-mode-arrow">→</span>
+              <span className="next-mode-arrow"><Icon name="arrowRight" size={14} /></span>
             </button>
           ) : (
             <button
@@ -674,7 +674,7 @@ const Team = ({ mode = 'team_ff' }) => {
             >
               <span className="next-mode-label">Tournoi terminé !</span>
               <span className="next-mode-name">Voir les résultats</span>
-              <span className="next-mode-arrow">🏆</span>
+              <span className="next-mode-arrow"><Icon name="trophy" size={16} /></span>
             </button>
           )}
         </div>
@@ -693,7 +693,6 @@ const Team = ({ mode = 'team_ff' }) => {
         onLayoutChange={setLayout}
       />
 
-      <AudioControls />
     </div>
   );
 };

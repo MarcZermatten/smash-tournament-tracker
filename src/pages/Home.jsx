@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAudio } from '../context/AudioContext';
+import Icon from '../components/Icon';
 import { useTournament } from '../context/TournamentContext';
 import { useModal } from '../components/Modal';
 import { getMatchesByType, getLeaderboard } from '../data/storage';
 import { getPlayer, getMainPlayers } from '../data/players';
-import AudioControls from '../components/AudioControls';
 import { playMenuSelectSound } from '../utils/sounds';
 
 const Home = () => {
@@ -234,11 +234,11 @@ const Home = () => {
           fontFamily: 'monospace', fontSize: '10px',
           maxHeight: '95vh', overflowY: 'auto'
         }}>
-          <h3 style={{ margin: '0 0 15px', color: '#ffd700', fontSize: '14px' }}>⚙️ Layout Editor</h3>
+          <h3 style={{ margin: '0 0 15px', color: '#ffd700', fontSize: '14px' }}><Icon name="settings" size={16} /> Layout Editor</h3>
 
           {/* CADRE GLOBAL */}
           <div style={{ background: '#1a1a2e', padding: 10, borderRadius: 5, marginBottom: 10 }}>
-            <h4 style={{ margin: '0 0 8px', color: '#00d4ff' }}>📦 Cadre Global</h4>
+            <h4 style={{ margin: '0 0 8px', color: '#00d4ff' }}><Icon name="package" size={16} /> Cadre Global</h4>
             <div style={{ marginBottom: 8 }}>
               <label>Position Y: {layout.frameTop}vh</label>
               <input type="range" min="0" max="50" value={layout.frameTop}
@@ -261,7 +261,7 @@ const Home = () => {
 
           {/* LOGO */}
           <div style={{ background: '#2e1a1a', padding: 10, borderRadius: 5, marginBottom: 10 }}>
-            <h4 style={{ margin: '0 0 8px', color: '#ffd700' }}>🏆 Logo</h4>
+            <h4 style={{ margin: '0 0 8px', color: '#ffd700' }}><Icon name="trophy" size={16} /> Logo</h4>
             <div style={{ marginBottom: 8 }}>
               <label>Taille: {layout.logoSize}px</label>
               <input type="range" min="100" max="350" value={layout.logoSize}
@@ -278,7 +278,7 @@ const Home = () => {
 
           {/* MENU BOUTONS */}
           <div style={{ background: '#1a2e1a', padding: 10, borderRadius: 5, marginBottom: 10 }}>
-            <h4 style={{ margin: '0 0 8px', color: '#50ff90' }}>🎮 Menu Boutons</h4>
+            <h4 style={{ margin: '0 0 8px', color: '#50ff90' }}><Icon name="gamepad" size={16} /> Menu Boutons</h4>
             <div style={{ marginBottom: 8 }}>
               <label>Décalage X: {layout.menuMarginLeft}px</label>
               <input type="range" min="-100" max="100" value={layout.menuMarginLeft}
@@ -295,7 +295,7 @@ const Home = () => {
 
           {/* BOUTON NOUVEAU TOURNOI */}
           <div style={{ background: '#2e2e1a', padding: 10, borderRadius: 5, marginBottom: 10 }}>
-            <h4 style={{ margin: '0 0 8px', color: '#ffaa00' }}>⚔️ Btn Tournoi</h4>
+            <h4 style={{ margin: '0 0 8px', color: '#ffaa00' }}><Icon name="sword" size={16} /> Btn Tournoi</h4>
             <div style={{ marginBottom: 8 }}>
               <label>Décalage X: {layout.btnTournamentX}px</label>
               <input type="range" min="-100" max="100" value={layout.btnTournamentX}
@@ -312,7 +312,7 @@ const Home = () => {
 
           {/* PANEL PREVIEW */}
           <div style={{ background: '#1a1a2e', padding: 10, borderRadius: 5, marginBottom: 10 }}>
-            <h4 style={{ margin: '0 0 8px', color: '#00d4ff' }}>📋 Panel Preview</h4>
+            <h4 style={{ margin: '0 0 8px', color: '#00d4ff' }}><Icon name="clipboard" size={16} /> Panel Preview</h4>
             <div style={{ marginBottom: 8 }}>
               <label>Décalage X: {layout.panelPreviewX}px</label>
               <input type="range" min="-100" max="100" value={layout.panelPreviewX}
@@ -332,7 +332,7 @@ const Home = () => {
             background: '#ffd700', color: '#000', border: 'none',
             borderRadius: 5, cursor: 'pointer', fontWeight: 'bold', fontSize: '12px'
           }}>
-            📋 COPIER CONFIG
+            <Icon name="clipboard" size={16} /> COPIER CONFIG
           </button>
 
           <pre style={{ marginTop: 10, padding: 8, background: '#111', borderRadius: 4, fontSize: 8, overflow: 'auto', maxHeight: 120 }}>
@@ -448,14 +448,14 @@ const Home = () => {
           onClick={toggleSound}
           title={soundEnabled ? 'Désactiver les sons' : 'Activer les sons'}
         >
-          {soundEnabled ? '🔊' : '🔇'}
+          {soundEnabled ? <Icon name="volumeOn" size={18} /> : <Icon name="volumeOff" size={18} />}
         </button>
         <button
           className={`audio-btn ${!musicEnabled ? 'off' : ''}`}
           onClick={toggleMusic}
           title={musicEnabled ? 'Désactiver la musique' : 'Activer la musique'}
         >
-          {musicEnabled ? '🎵' : '🔕'}
+          {musicEnabled ? <Icon name="music" size={18} /> : <Icon name="musicOff" size={18} />}
         </button>
       </div>
 
@@ -712,7 +712,6 @@ const Home = () => {
         }
       `}</style>
 
-      <AudioControls />
     </div>
   );
 };

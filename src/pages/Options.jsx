@@ -8,7 +8,7 @@ import {
 } from '../data/storage';
 import { getMainPlayers } from '../data/players';
 import LayoutEditor from '../components/LayoutEditor';
-import AudioControls from '../components/AudioControls';
+import Icon from '../components/Icon';
 import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout Options
@@ -168,11 +168,11 @@ const Options = () => {
   const totalMatches = data.matches.length;
 
   const tabs = [
-    { id: 'points', label: 'Points', icon: '🏆' },
-    { id: 'matchs', label: 'Matchs', icon: '🎮' },
-    { id: 'audio', label: 'Audio', icon: '🔊' },
-    { id: 'data', label: 'Données', icon: '💾' },
-    { id: 'about', label: 'À propos', icon: 'ℹ️' },
+    { id: 'points', label: 'Points', icon: 'trophy' },
+    { id: 'matchs', label: 'Matchs', icon: 'gamepad' },
+    { id: 'audio', label: 'Audio', icon: 'volumeOn' },
+    { id: 'data', label: 'Données', icon: 'save' },
+    { id: 'about', label: 'À propos', icon: 'info' },
   ];
 
   return (
@@ -198,7 +198,7 @@ const Options = () => {
               className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
-              <span className="tab-icon">{tab.icon}</span>
+              <span className="tab-icon"><Icon name={tab.icon} size={20} /></span>
               <span className="tab-label">{tab.label}</span>
             </button>
           ))}
@@ -221,7 +221,7 @@ const Options = () => {
               {/* 1v1 */}
               <div className="mode-config">
                 <div className="mode-header">
-                  <span className="mode-icon">⚔️</span>
+                  <Icon name="swords" size={24} />
                   <span className="mode-name">1v1</span>
                 </div>
                 <div className="points-inputs">
@@ -251,7 +251,7 @@ const Options = () => {
               {/* FFA */}
               <div className="mode-config">
                 <div className="mode-header">
-                  <span className="mode-icon">🎯</span>
+                  <span className="mode-icon"><Icon name="target" size={16} /></span>
                   <span className="mode-name">Free For All</span>
                 </div>
                 <div className="points-inputs ffa-grid">
@@ -273,7 +273,7 @@ const Options = () => {
               {/* Team FF */}
               <div className="mode-config">
                 <div className="mode-header">
-                  <span className="mode-icon">🔥</span>
+                  <span className="mode-icon"><Icon name="fire" size={16} /></span>
                   <span className="mode-name">2v2 Friendly Fire</span>
                 </div>
                 <div className="points-inputs">
@@ -303,7 +303,7 @@ const Options = () => {
               {/* Team No FF */}
               <div className="mode-config">
                 <div className="mode-header">
-                  <span className="mode-icon">🤝</span>
+                  <span className="mode-icon"><Icon name="handshake" size={16} /></span>
                   <span className="mode-name">2v2 No Friendly Fire</span>
                 </div>
                 <div className="points-inputs">
@@ -333,7 +333,7 @@ const Options = () => {
               {/* Casual 2v3 */}
               <div className="mode-config">
                 <div className="mode-header">
-                  <span className="mode-icon">👶</span>
+                  <span className="mode-icon"><Icon name="baby" size={16} /></span>
                   <span className="mode-name">Casual 2v3 (Protège le Noob)</span>
                 </div>
                 <div className="points-inputs casual-grid">
@@ -400,7 +400,7 @@ const Options = () => {
               {/* 1v1 */}
               <div className="mode-config">
                 <div className="mode-header">
-                  <span className="mode-icon">⚔️</span>
+                  <Icon name="swords" size={24} />
                   <span className="mode-name">1v1</span>
                 </div>
                 <div className="match-options">
@@ -425,7 +425,7 @@ const Options = () => {
               {/* FFA */}
               <div className="mode-config">
                 <div className="mode-header">
-                  <span className="mode-icon">🎯</span>
+                  <span className="mode-icon"><Icon name="target" size={16} /></span>
                   <span className="mode-name">Free For All</span>
                 </div>
                 <div className="match-options">
@@ -444,7 +444,7 @@ const Options = () => {
               {/* Team FF */}
               <div className="mode-config">
                 <div className="mode-header">
-                  <span className="mode-icon">🔥</span>
+                  <span className="mode-icon"><Icon name="fire" size={16} /></span>
                   <span className="mode-name">2v2 FF</span>
                 </div>
                 <div className="match-options">
@@ -469,7 +469,7 @@ const Options = () => {
               {/* Team No FF */}
               <div className="mode-config">
                 <div className="mode-header">
-                  <span className="mode-icon">🤝</span>
+                  <span className="mode-icon"><Icon name="handshake" size={16} /></span>
                   <span className="mode-name">2v2 No FF</span>
                 </div>
                 <div className="match-options">
@@ -549,40 +549,40 @@ const Options = () => {
                         onClick={previousTrack}
                         title="Piste précédente"
                       >
-                        ⏮
+                        <Icon name="skipBack" size={16} />
                       </button>
                       <button
                         className="music-btn"
                         onClick={togglePlayPause}
                         title={isPlaying ? 'Pause' : 'Play'}
                       >
-                        {isPlaying ? '⏸' : '▶'}
+                        {isPlaying ? <Icon name="pause" size={16} /> : <Icon name="play" size={16} />}
                       </button>
                       <button
                         className="music-btn"
                         onClick={nextTrack}
                         title="Piste suivante"
                       >
-                        ⏭
+                        <Icon name="skipForward" size={16} />
                       </button>
                     </div>
                   </div>
 
                   {/* Liste des pistes par catégorie */}
                   <div className="track-list">
-                    {['Menu', 'Zelda', 'Mario', 'Kirby', 'Stage', 'Character', 'Misc'].map(category => {
+                    {['Menu', 'Zelda', 'Mario', 'Kirby', 'Stage', 'Character', 'Divers'].map(category => {
                       const categoryTracks = playlist.filter(t => t.category === category);
                       if (categoryTracks.length === 0) return null;
                       return (
                         <div key={category} className="track-category">
                           <div className="category-header">
-                            {category === 'Menu' && '🎮 Menu'}
-                            {category === 'Zelda' && '🗡️ Zelda'}
-                            {category === 'Mario' && '🍄 Mario'}
-                            {category === 'Kirby' && '⭐ Kirby'}
-                            {category === 'Stage' && '🏟️ Stages'}
-                            {category === 'Character' && '👤 Personnages'}
-                            {category === 'Misc' && '🎵 Divers'}
+                            {category === 'Menu' && <><Icon name="gamepad" size={16} /> Menu</>}
+                            {category === 'Zelda' && <><Icon name="swords" size={16} /> Zelda</>}
+                            {category === 'Mario' && <><Icon name="mushroom" size={16} /> Mario</>}
+                            {category === 'Kirby' && <><Icon name="star" size={16} /> Kirby</>}
+                            {category === 'Stage' && <><Icon name="stadium" size={16} /> Stages</>}
+                            {category === 'Character' && <><Icon name="user" size={16} /> Personnages</>}
+                            {category === 'Divers' && <><Icon name="music" size={16} /> Divers</>}
                           </div>
                           <div className="category-tracks">
                             {categoryTracks.map(track => (
@@ -604,7 +604,7 @@ const Options = () => {
                   </div>
 
                   <p className="track-hint">
-                    💡 Ajoute tes propres MP3 dans <code>public/audio/</code>
+                    <Icon name="lightbulb" size={16} /> Ajoute tes propres MP3 dans <code>public/audio/</code>
                   </p>
                 </div>
               )}
@@ -627,11 +627,11 @@ const Options = () => {
 
               <div className="data-buttons">
                 <button className="data-btn export" onClick={handleExport}>
-                  <span>📤</span> Exporter (JSON)
+                  <span><Icon name="upload" size={16} /></span> Exporter (JSON)
                 </button>
 
                 <button className="data-btn import" onClick={() => fileInputRef.current?.click()}>
-                  <span>📥</span> Importer
+                  <span><Icon name="download" size={16} /></span> Importer
                 </button>
                 <input
                   ref={fileInputRef}
@@ -716,7 +716,7 @@ const Options = () => {
       </div>
 
       <Link to="/" className="back-btn" onClick={playMenuSelectSound}>
-        ← Menu
+        <Icon name="arrowLeft" size={14} /> Menu
       </Link>
 
       {/* Layout Editor (mode dev) */}
@@ -1248,7 +1248,6 @@ const Options = () => {
         }
       `}</style>
 
-      <AudioControls />
     </div>
   );
 };

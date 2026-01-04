@@ -5,9 +5,9 @@ import {
   setPlayerImage, COLORS, AVATARS, getAvatar
 } from '../data/players';
 import { useTournament } from '../context/TournamentContext';
+import Icon from '../components/Icon';
 import { useAudio } from '../context/AudioContext';
 import { useModal } from '../components/Modal';
-import AudioControls from '../components/AudioControls';
 import { playMenuSelectSound } from '../utils/sounds';
 
 const TournamentSetup = () => {
@@ -50,11 +50,11 @@ const TournamentSetup = () => {
   }, []);
 
   const modes = [
-    { id: 'ffa', name: 'Free For All', icon: '🎯', desc: '4 joueurs' },
-    { id: '1v1', name: '1 vs 1', icon: '⚔️', desc: 'Duels classiques' },
-    { id: 'team_ff', name: '2v2 FF', icon: '🔥', desc: 'Équipes avec friendly fire' },
-    { id: 'team_noff', name: '2v2 Team', icon: '🤝', desc: 'Équipes sans friendly fire' },
-    { id: 'casual', name: 'Casual', icon: '👶', desc: '2v3 Protège le Noob (FF ON + FF OFF)' },
+    { id: 'ffa', name: 'Free For All', icon: 'target', desc: '4 joueurs' },
+    { id: '1v1', name: '1 vs 1', icon: 'swords', desc: 'Duels classiques' },
+    { id: 'team_ff', name: '2v2 FF', icon: 'fire', desc: 'Équipes avec friendly fire' },
+    { id: 'team_noff', name: '2v2 Team', icon: 'handshake', desc: 'Équipes sans friendly fire' },
+    { id: 'casual', name: 'Casual', icon: 'baby', desc: '2v3 Protège le Noob (FF ON + FF OFF)' },
   ];
 
   const togglePlayer = (playerId) => {
@@ -221,7 +221,7 @@ const TournamentSetup = () => {
       >
         <div className="player-select-checkbox" onClick={() => togglePlayer(playerId)}>
           <div className={`checkbox ${isSelected ? 'checked' : ''}`}>
-            {isSelected && '✓'}
+            {isSelected && <Icon name="check" size={14} />}
           </div>
         </div>
 
@@ -394,11 +394,11 @@ const TournamentSetup = () => {
                   className={`mode-card ${selectedModes.includes(mode.id) ? 'selected' : ''}`}
                   onClick={() => toggleMode(mode.id)}
                 >
-                  <div className="mode-icon">{mode.icon}</div>
+                  <div className="mode-icon"><Icon name={mode.icon} size={24} /></div>
                   <div className="mode-name">{mode.name}</div>
                   <div className="mode-desc">{mode.desc}</div>
                   {selectedModes.includes(mode.id) && (
-                    <div className="mode-check">✓</div>
+                    <div className="mode-check"><Icon name="check" size={14} /></div>
                   )}
                 </button>
               ))}
@@ -428,7 +428,7 @@ const TournamentSetup = () => {
               {/* Sélection du Noob si mode Casual activé */}
               {selectedModes.includes('casual') && (
                 <div className="form-group noob-selection">
-                  <label>👶 Choisir le Noob pour le mode Casual</label>
+                  <label><Icon name="baby" size={16} /> Choisir le Noob pour le mode Casual</label>
                   <div className="noob-options">
                     {selectedPlayers.map(id => {
                       const player = players[id];
@@ -447,7 +447,7 @@ const TournamentSetup = () => {
                             {player.initial}
                           </div>
                           <span className="noob-name">{player.name}</span>
-                          {casualNoob === id && <span className="noob-check">✓</span>}
+                          {casualNoob === id && <span className="noob-check"><Icon name="check" size={14} /></span>}
                         </button>
                       );
                     })}
@@ -492,7 +492,7 @@ const TournamentSetup = () => {
         <div className="setup-navigation">
           {step > 1 && (
             <button className="nav-btn prev" onClick={() => { playMenuSelectSound(); setStep(step - 1); }}>
-              ← Retour
+              <Icon name="arrowLeft" size={14} /> Retour
             </button>
           )}
 
@@ -502,7 +502,7 @@ const TournamentSetup = () => {
               onClick={() => { playMenuSelectSound(); setStep(step + 1); }}
               disabled={step === 1 && selectedPlayers.length < 2}
             >
-              Suivant →
+              Suivant <Icon name="arrowRight" size={14} />
             </button>
           ) : (
             <button className="nav-btn go" onClick={handleStart}>
@@ -513,7 +513,7 @@ const TournamentSetup = () => {
       </div>
 
       <Link to="/" className="back-btn" onClick={playMenuSelectSound}>
-        ← Annuler
+        <Icon name="arrowLeft" size={14} /> Annuler
       </Link>
 
       {renderEditModal()}
@@ -530,7 +530,6 @@ const TournamentSetup = () => {
         </div>
       )}
 
-      <AudioControls />
 
       <style>{`
         .steps-indicator {

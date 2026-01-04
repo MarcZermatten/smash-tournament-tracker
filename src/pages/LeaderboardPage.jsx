@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getLeaderboard, getPlayerStats } from '../data/storage';
+import Icon from '../components/Icon';
 import { getPlayer } from '../data/players';
 import { useTournament } from '../context/TournamentContext';
 import { useAudio } from '../context/AudioContext';
-import AudioControls from '../components/AudioControls';
 import { playMenuSelectSound } from '../utils/sounds';
 
 const LeaderboardPage = () => {
@@ -38,7 +38,7 @@ const LeaderboardPage = () => {
 
   // Fonction de reveal avec total passé en paramètre pour éviter closure stale
   // Timing précis : champion doit apparaître à exactement 10s du clic
-  // Countdown: 3s, GAME: 2s, Révélation: 2s, Délai: 3s → Total: 10s
+  // Countdown: 3s, GAME: 2s, Révélation: 2s, Délai: 3s <Icon name="arrowRight" size={14} /> Total: 10s
   const doReveal = useCallback((total) => {
     setPhase('revealing');
     setRevealedCount(0);
@@ -142,7 +142,7 @@ const LeaderboardPage = () => {
     return (
       <div className="player-modal-overlay" onClick={() => setSelectedPlayer(null)}>
         <div className="player-modal" onClick={e => e.stopPropagation()}>
-          <button className="close-btn" onClick={() => setSelectedPlayer(null)}>✕</button>
+          <button className="close-btn" onClick={() => setSelectedPlayer(null)}><Icon name="close" size={14} /></button>
           <div className="modal-header" style={{ '--player-color': player?.color }}>
             {player?.image ? (
               <img src={player.image} alt={player.name} className="modal-avatar-img" />
@@ -235,7 +235,7 @@ const LeaderboardPage = () => {
 
             <div className="combatants-count">{leaderboard.length} COMBATTANTS</div>
           </div>
-          <Link to="/" className="back-btn-intro" onClick={playMenuSelectSound}>← Retour au menu</Link>
+          <Link to="/" className="back-btn-intro" onClick={playMenuSelectSound}><Icon name="arrowLeft" size={14} /> Retour au menu</Link>
         </div>
       )}
 
@@ -375,7 +375,7 @@ const LeaderboardPage = () => {
             </div>
 
             {phase === 'revealed' && (
-              <button className="reset-btn" onClick={resetReveal}>🔄 Recommencer</button>
+              <button className="reset-btn" onClick={resetReveal}><Icon name="refresh" size={16} /> Recommencer</button>
             )}
           </div>
         </div>
@@ -391,7 +391,7 @@ const LeaderboardPage = () => {
         </div>
       )}
 
-      <Link to="/" className="back-btn" onClick={playMenuSelectSound}>← Menu</Link>
+      <Link to="/" className="back-btn" onClick={playMenuSelectSound}><Icon name="arrowLeft" size={14} /> Menu</Link>
       {renderPlayerModal()}
 
       <style>{`
@@ -1414,7 +1414,6 @@ const LeaderboardPage = () => {
         }
       `}</style>
 
-      <AudioControls />
     </div>
   );
 };

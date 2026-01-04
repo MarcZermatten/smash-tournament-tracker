@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getMainPlayers, getPlayer, getPointsSystem } from '../data/players';
+import Icon from '../components/Icon';
 import { addMatch, getMatchesByType, undoLastMatch, getMatchConfig } from '../data/storage';
 import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
-import AudioControls from '../components/AudioControls';
 import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout FFA
@@ -222,7 +222,7 @@ const FFA = () => {
 
             {allRotationsComplete && (
               <div className="rotation-complete-mini" style={{ marginBottom: '10px' }}>
-                ✓ Objectif atteint !
+                <Icon name="check" size={14} /> Objectif atteint !
               </div>
             )}
 
@@ -372,7 +372,7 @@ const FFA = () => {
               <span className="panel-title">Classement FFA</span>
               {matches.length > 0 && (
                 <button className="edit-results-btn" onClick={handleUndo} title="Annuler le dernier match">
-                  ↩
+                  <Icon name="undo" size={16} />
                 </button>
               )}
             </div>
@@ -520,7 +520,7 @@ const FFA = () => {
             >
               <span className="next-mode-label">Mode suivant</span>
               <span className="next-mode-name">{modeNames[nextMode]}</span>
-              <span className="next-mode-arrow">→</span>
+              <span className="next-mode-arrow"><Icon name="arrowRight" size={14} /></span>
             </button>
           ) : (
             <button
@@ -532,7 +532,7 @@ const FFA = () => {
             >
               <span className="next-mode-label">Tournoi terminé !</span>
               <span className="next-mode-name">Voir les résultats</span>
-              <span className="next-mode-arrow">🏆</span>
+              <span className="next-mode-arrow"><Icon name="trophy" size={16} /></span>
             </button>
           )}
         </div>
@@ -551,7 +551,6 @@ const FFA = () => {
         onLayoutChange={setLayout}
       />
 
-      <AudioControls />
     </div>
   );
 };

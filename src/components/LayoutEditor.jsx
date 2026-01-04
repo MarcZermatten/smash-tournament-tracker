@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Icon from './Icon';
 
 /**
  * Composant réutilisable pour ajuster le layout des pages
@@ -68,8 +69,8 @@ const LayoutEditor = ({ pageKey, defaultLayout, controls, onLayoutChange }) => {
       <div className="layout-editor-header">
         <span className="layout-editor-title">Layout Editor - {pageKey}</span>
         <div className="layout-editor-actions">
-          <button onClick={copyConfig} title="Copier config">📋</button>
-          <button onClick={resetLayout} title="Reset">↺</button>
+          <button onClick={copyConfig} title="Copier config"><Icon name="clipboard" size={16} /></button>
+          <button onClick={resetLayout} title="Reset"><Icon name="refresh" size={16} /></button>
         </div>
       </div>
 

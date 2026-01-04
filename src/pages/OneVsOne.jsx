@@ -1,11 +1,11 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getMainPlayers, getPlayer, getAvatar, getPointsSystem, getPlayerImage } from '../data/players';
+import Icon from '../components/Icon';
 import { addMatch, getMatchesByType, undoLastMatch } from '../data/storage';
 import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
-import AudioControls from '../components/AudioControls';
 import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout 1v1
@@ -409,7 +409,7 @@ const OneVsOne = () => {
               <span className="panel-badge">{matches.length}</span>
               {matches.length > 0 && (
                 <button className="edit-results-btn" onClick={handleUndo} title="Annuler le dernier match">
-                  ↩
+                  <Icon name="undo" size={16} />
                 </button>
               )}
             </div>
@@ -486,7 +486,7 @@ const OneVsOne = () => {
             >
               <span className="next-mode-label">Mode suivant</span>
               <span className="next-mode-name">{modeNames[nextMode]}</span>
-              <span className="next-mode-arrow">→</span>
+              <span className="next-mode-arrow"><Icon name="arrowRight" size={14} /></span>
             </button>
           ) : (
             <button
@@ -498,7 +498,7 @@ const OneVsOne = () => {
             >
               <span className="next-mode-label">Tournoi terminé !</span>
               <span className="next-mode-name">Voir les résultats</span>
-              <span className="next-mode-arrow">🏆</span>
+              <span className="next-mode-arrow"><Icon name="trophy" size={16} /></span>
             </button>
           )}
         </div>
@@ -517,7 +517,6 @@ const OneVsOne = () => {
         onLayoutChange={setLayout}
       />
 
-      <AudioControls />
     </div>
   );
 };

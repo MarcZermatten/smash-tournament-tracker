@@ -4,7 +4,16 @@
       "Bash(npm run dev:*)",
       "Bash(ls:*)",
       "Bash(done)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(for file in src/components/*.jsx src/pages/*.jsx)",
+      "Bash(do if [ -f \"$file\" ])",
+      "Bash(then if ! grep -q \"^import Icon from\" \"$file\")",
+      "Bash(then echo \"$file - NEEDS IMPORT\")",
+      "Bash(fi)",
+      "Bash(bash replace-emojis.sh:*)",
+      "Bash(node replace-emojis.js:*)",
+      "Bash(node:*)"
     ]
   }
 }

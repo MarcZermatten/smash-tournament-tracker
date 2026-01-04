@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getTournamentHistory, deleteTournament } from '../data/storage';
+import Icon from '../components/Icon';
 import { getPlayer } from '../data/players';
 import { useAudio } from '../context/AudioContext';
 import { useModal } from '../components/Modal';
 import LayoutEditor from '../components/LayoutEditor';
-import AudioControls from '../components/AudioControls';
 import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout Wall of Fame
@@ -203,7 +203,7 @@ const WallOfFame = () => {
           <button className="close-btn" onClick={() => setSelectedTournament(null)}>X</button>
 
           <div className="modal-header">
-            <span className="trophy">🏆</span>
+            <span className="trophy"><Icon name="trophy" size={16} /></span>
             <h2>{t.name}</h2>
             <span className="modal-date">{formatDate(t.startedAt)}</span>
           </div>
@@ -294,7 +294,7 @@ const WallOfFame = () => {
                 return (
                   <div key={playerId} className={`legend-card legend-${idx + 1}`}>
                     <div className="legend-rank">
-                      {idx === 0 ? '👑' : idx === 1 ? '🥈' : '🥉'}
+                      {idx === 0 ? <Icon name="crown" size={20} /> : <Icon name="medal" size={16} />}
                     </div>
                     {player?.image ? (
                       <img src={player.image} alt={player.name} className="legend-img" />
@@ -317,7 +317,7 @@ const WallOfFame = () => {
         {/* Section Records */}
         {records && (
           <div className="records-section">
-            <h2 className="section-title">🏅 Records</h2>
+            <h2 className="section-title"><Icon name="medal" size={16} /> Records</h2>
 
             {/* Stats globales */}
             <div className="global-stats">
@@ -335,7 +335,7 @@ const WallOfFame = () => {
             <div className="records-grid">
               {records.bestScore && (
                 <div className="record-card">
-                  <span className="record-icon">⭐</span>
+                  <span className="record-icon"><Icon name="star" size={16} /></span>
                   <div className="record-info">
                     <span className="record-title">Meilleur Score</span>
                     <span className="record-holder" style={{ color: getPlayer(records.bestScore.player)?.color }}>
@@ -349,7 +349,7 @@ const WallOfFame = () => {
 
               {records.biggestGap && (
                 <div className="record-card">
-                  <span className="record-icon">💪</span>
+                  <span className="record-icon"><Icon name="muscle" size={16} /></span>
                   <div className="record-info">
                     <span className="record-title">Plus Grosse Domination</span>
                     <span className="record-holder" style={{ color: getPlayer(records.biggestGap.player)?.color }}>
@@ -363,7 +363,7 @@ const WallOfFame = () => {
 
               {records.bestAverage && (
                 <div className="record-card">
-                  <span className="record-icon">📊</span>
+                  <span className="record-icon"><Icon name="chartBar" size={16} /></span>
                   <div className="record-info">
                     <span className="record-title">Meilleure Moyenne</span>
                     <span className="record-holder" style={{ color: getPlayer(records.bestAverage.player)?.color }}>
@@ -376,7 +376,7 @@ const WallOfFame = () => {
 
               {records.mostPodiums && (
                 <div className="record-card">
-                  <span className="record-icon">🎯</span>
+                  <span className="record-icon"><Icon name="target" size={16} /></span>
                   <div className="record-info">
                     <span className="record-title">Plus de Podiums</span>
                     <span className="record-holder" style={{ color: getPlayer(records.mostPodiums.player)?.color }}>
@@ -389,7 +389,7 @@ const WallOfFame = () => {
 
               {records.mostSecondPlaces && (
                 <div className="record-card">
-                  <span className="record-icon">🥈</span>
+                  <span className="record-icon"><Icon name="medal" size={16} /></span>
                   <div className="record-info">
                     <span className="record-title">L'Éternel Second</span>
                     <span className="record-holder" style={{ color: getPlayer(records.mostSecondPlaces.player)?.color }}>
@@ -409,7 +409,7 @@ const WallOfFame = () => {
 
           {tournaments.length === 0 ? (
             <div className="empty-state">
-              <span className="empty-icon">🏆</span>
+              <span className="empty-icon"><Icon name="trophy" size={16} /></span>
               <p>Aucun tournoi terminé</p>
               <p className="empty-hint">Terminez un tournoi pour le voir apparaître ici !</p>
             </div>
@@ -423,7 +423,7 @@ const WallOfFame = () => {
                     className="tournament-card"
                     onClick={() => { setSelectedTournament(t); playSound('select'); }}
                   >
-                    <div className="tournament-trophy">🏆</div>
+                    <div className="tournament-trophy"><Icon name="trophy" size={16} /></div>
                     <div className="tournament-info">
                       <span className="tournament-name">{t.name}</span>
                       <span className="tournament-date">{formatDate(t.startedAt)}</span>
@@ -438,7 +438,7 @@ const WallOfFame = () => {
                       )}
                       <span style={{ color: winner?.color }}>{winner?.name}</span>
                     </div>
-                    <div className="tournament-arrow">→</div>
+                    <div className="tournament-arrow"><Icon name="arrowRight" size={14} /></div>
                   </div>
                 );
               })}
@@ -448,7 +448,7 @@ const WallOfFame = () => {
       </div>
 
       <Link to="/" className="back-btn" onClick={playMenuSelectSound}>
-        ← Menu
+        <Icon name="arrowLeft" size={14} /> Menu
       </Link>
 
       {/* Layout Editor (mode dev) */}
@@ -461,7 +461,6 @@ const WallOfFame = () => {
 
       {renderTournamentModal()}
 
-      <AudioControls />
 
       <style>{`
         .section-title {

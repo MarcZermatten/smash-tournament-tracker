@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import Icon from './Icon';
 import { playMenuSelectSound } from '../utils/sounds';
 
 const BackButton = ({ to = -1, label = 'Retour' }) => {
@@ -26,7 +27,7 @@ const BackButton = ({ to = -1, label = 'Retour' }) => {
         zIndex: 100,
       }}
     >
-      ← {label}
+      <Icon name="arrowLeft" size={14} /> {label}
     </button>
   );
 };

@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getMainPlayers, getPlayer } from '../data/players';
+import Icon from '../components/Icon';
 import { addMatch, getMatchesByType, undoLastMatch, getPointsConfig } from '../data/storage';
 import { useAudio } from '../context/AudioContext';
 import { useTournament } from '../context/TournamentContext';
 import LayoutEditor from '../components/LayoutEditor';
-import AudioControls from '../components/AudioControls';
 import { playMenuSelectSound } from '../utils/sounds';
 
 // Configuration par défaut du layout Casual
@@ -352,13 +352,13 @@ const Casual = () => {
             className={`ff-btn ${friendlyFire ? 'active' : ''}`}
             onClick={() => setFriendlyFire(true)}
           >
-            🔥 FF ON
+            <Icon name="fire" size={16} /> FF ON
           </button>
           <button
             className={`ff-btn ${!friendlyFire ? 'active' : ''}`}
             onClick={() => setFriendlyFire(false)}
           >
-            🛡️ FF OFF
+            <Icon name="shield" size={16} /> FF OFF
           </button>
         </div>
 
@@ -370,7 +370,7 @@ const Casual = () => {
             {!vipLocked ? (
               <>
                 <div className="panel-header">
-                  <span className="panel-title">👶 Choisir le Noob</span>
+                  <span className="panel-title"><Icon name="baby" size={16} /> Choisir le Noob</span>
                 </div>
                 <div className="player-list">
                   {players.map(playerId => {
@@ -389,7 +389,7 @@ const Casual = () => {
                         </div>
                         <span className="player-name">{player?.name}</span>
                         <span className="player-stats">{stats?.totalPoints || 0}pts</span>
-                        {isVip && <span className="role-badge vip">👶</span>}
+                        {isVip && <span className="role-badge vip"><Icon name="baby" size={16} /></span>}
                       </button>
                     );
                   })}
@@ -413,7 +413,7 @@ const Casual = () => {
                 {/* Rotations - affichage selon l'onglet sélectionné */}
                 <div className="rotations-section">
                   <div className={`panel-header ${friendlyFire ? 'ff-on' : 'ff-off'}`}>
-                    <span className="panel-title">{friendlyFire ? '🔥 FF ON' : '🛡️ FF OFF'}</span>
+                    <span className="panel-title">{friendlyFire ? <><Icon name="fire" size={16} /> FF ON</> : <><Icon name="shield" size={16} /> FF OFF</>}</span>
                     <span className="panel-badge">
                       {countRemainingRotations(friendlyFire)}/{rotations.length}
                     </span>
@@ -437,13 +437,13 @@ const Casual = () => {
                           disabled={played}
                         >
                           <span className="rot-team prot">
-                            🛡️ {getPlayer(rotation.protectors[0])?.name?.substring(0, 3)}-{getPlayer(rotation.protectors[1])?.name?.substring(0, 3)}
+                            <Icon name="shield" size={16} /> {getPlayer(rotation.protectors[0])?.name?.substring(0, 3)}-{getPlayer(rotation.protectors[1])?.name?.substring(0, 3)}
                           </span>
                           <span className="rot-vs">vs</span>
                           <span className="rot-team hunt">
-                            ⚔️ {getPlayer(rotation.hunters[0])?.name?.substring(0, 3)}-{getPlayer(rotation.hunters[1])?.name?.substring(0, 3)}
+                            <Icon name="sword" size={16} /> {getPlayer(rotation.hunters[0])?.name?.substring(0, 3)}-{getPlayer(rotation.hunters[1])?.name?.substring(0, 3)}
                           </span>
-                          {played && <span className="rot-done">✓</span>}
+                          {played && <span className="rot-done"><Icon name="check" size={14} /></span>}
                         </button>
                       );
                     })}
@@ -457,7 +457,7 @@ const Casual = () => {
           <div className="casual-panel teams-panel">
             <div className="team-section">
               <div className="team-header protectors">
-                <span>🛡️ PROTECTEURS (2)</span>
+                <span><Icon name="shield" size={16} /> PROTECTEURS (2)</span>
                 <span className="team-count">{protectors.length}/2</span>
               </div>
               {vip && (
@@ -471,7 +471,7 @@ const Casual = () => {
                       {getPlayer(vip)?.name}
                     </span>
                   </div>
-                  <span className="vip-icon">👶</span>
+                  <span className="vip-icon"><Icon name="baby" size={16} /></span>
                 </div>
               )}
               <div className="team-slots">
@@ -486,7 +486,7 @@ const Casual = () => {
                             {player.initial}
                           </div>
                           <span style={{ color: player.color }}>{player.name}</span>
-                          <button className="remove-btn" onClick={() => toggleProtector(playerId)}>×</button>
+                          <button className="remove-btn" onClick={() => toggleProtector(playerId)}><Icon name="close" size={14} /></button>
                         </>
                       ) : (
                         <span className="slot-empty">Sélectionner...</span>
@@ -516,7 +516,7 @@ const Casual = () => {
 
             <div className="team-section">
               <div className="team-header hunters">
-                <span>⚔️ CHASSEURS (2)</span>
+                <span><Icon name="sword" size={16} /> CHASSEURS (2)</span>
                 <span className="team-count">{hunters.length}/2</span>
               </div>
               <div className="team-slots">
@@ -531,7 +531,7 @@ const Casual = () => {
                             {player.initial}
                           </div>
                           <span style={{ color: player.color }}>{player.name}</span>
-                          <button className="remove-btn" onClick={() => toggleHunter(playerId)}>×</button>
+                          <button className="remove-btn" onClick={() => toggleHunter(playerId)}><Icon name="close" size={14} /></button>
                         </>
                       ) : (
                         <span className="slot-empty">Sélectionner...</span>
@@ -563,14 +563,14 @@ const Casual = () => {
             {lastMatch && (
               <div className="last-match-alert">
                 <span className="alert-text">
-                  {lastMatch.winner === 'protectors' ? '🛡️ Protecteurs' : '⚔️ Chasseurs'} gagnent !
+                  {lastMatch.winner === 'protectors' ? <><Icon name="shield" size={16} /> Protecteurs</> : <><Icon name="sword" size={16} /> Chasseurs</>} gagnent !
                 </span>
                 <button className="undo-btn" onClick={handleUndo}>Annuler</button>
               </div>
             )}
 
             <div className="panel-header">
-              <span className="panel-title">🏆 Qui a gagné ?</span>
+              <span className="panel-title"><Icon name="trophy" size={16} /> Qui a gagné ?</span>
             </div>
 
             {isConfigComplete ? (
@@ -579,7 +579,7 @@ const Casual = () => {
                   className={`winner-btn protectors ${winner === 'protectors' ? 'selected' : ''}`}
                   onClick={() => selectWinner('protectors')}
                 >
-                  <span className="winner-icon">🛡️</span>
+                  <span className="winner-icon"><Icon name="shield" size={16} /></span>
                   <span className="winner-label">Protecteurs</span>
                   <span className="winner-desc">Le noob survit</span>
                   <span className="winner-points">+{POINTS.protectors_win}pts / VIP +{POINTS.vip_win}pts</span>
@@ -589,7 +589,7 @@ const Casual = () => {
                   className={`winner-btn hunters ${winner === 'hunters' ? 'selected' : ''}`}
                   onClick={() => selectWinner('hunters')}
                 >
-                  <span className="winner-icon">⚔️</span>
+                  <span className="winner-icon"><Icon name="sword" size={16} /></span>
                   <span className="winner-label">Chasseurs</span>
                   <span className="winner-desc">Le noob est mort</span>
                   <span className="winner-points">+{POINTS.hunters_win}pts chacun</span>
@@ -599,9 +599,9 @@ const Casual = () => {
               <div className="config-hint">
                 <p>Configure les équipes :</p>
                 <ul>
-                  <li className={vip ? 'done' : ''}>1 Noob à protéger {vip && '✓'}</li>
-                  <li className={protectors.length === 2 ? 'done' : ''}>2 Protecteurs {protectors.length === 2 && '✓'}</li>
-                  <li className={hunters.length === 2 ? 'done' : ''}>2 Chasseurs {hunters.length === 2 && '✓'}</li>
+                  <li className={vip ? 'done' : ''}>1 Noob à protéger {vip && <Icon name="check" size={14} />}</li>
+                  <li className={protectors.length === 2 ? 'done' : ''}>2 Protecteurs {protectors.length === 2 && <Icon name="check" size={14} />}</li>
+                  <li className={hunters.length === 2 ? 'done' : ''}>2 Chasseurs {hunters.length === 2 && <Icon name="check" size={14} />}</li>
                 </ul>
               </div>
             )}
@@ -621,7 +621,7 @@ const Casual = () => {
 
             {/* Stats */}
             <div className="panel-header" style={{ marginTop: '1rem' }}>
-              <span className="panel-title">📊 Stats</span>
+              <span className="panel-title"><Icon name="chartBar" size={16} /> Stats</span>
               <span className="panel-badge">{matches.length} matchs</span>
             </div>
             <div className="stats-hint">
@@ -634,7 +634,7 @@ const Casual = () => {
             {matches.length > 0 && (
               <div className="match-history">
                 <div className="panel-header" style={{ marginTop: '1rem' }}>
-                  <span className="panel-title">📜 Historique</span>
+                  <span className="panel-title"><Icon name="scroll" size={16} /> Historique</span>
                 </div>
                 <div className="history-list">
                   {matches.slice(-5).reverse().map((match, idx) => {
@@ -645,7 +645,7 @@ const Casual = () => {
                           {vipPlayer?.name}
                         </span>
                         <span className="history-result">
-                          {match.winner === 'protectors' ? '🛡️ Survit' : '⚔️ Mort'}
+                          {match.winner === 'protectors' ? <><Icon name="shield" size={16} /> Survit</> : <><Icon name="sword" size={16} /> Mort</>}
                         </span>
                         <span className="history-ff">
                           {match.friendlyFire ? 'FF' : 'NoFF'}
@@ -674,7 +674,7 @@ const Casual = () => {
             >
               <span className="next-mode-label">Mode suivant</span>
               <span className="next-mode-name">{modeNames[nextMode]}</span>
-              <span className="next-mode-arrow">→</span>
+              <span className="next-mode-arrow"><Icon name="arrowRight" size={14} /></span>
             </button>
           ) : (
             <button
@@ -686,14 +686,14 @@ const Casual = () => {
             >
               <span className="next-mode-label">Tournoi terminé !</span>
               <span className="next-mode-name">Voir les résultats</span>
-              <span className="next-mode-arrow">🏆</span>
+              <span className="next-mode-arrow"><Icon name="trophy" size={16} /></span>
             </button>
           )}
         </div>
       )}
 
       <Link to="/" className="back-btn" onClick={playMenuSelectSound}>
-        ← Menu
+        <Icon name="arrowLeft" size={14} /> Menu
       </Link>
 
       <LayoutEditor
@@ -703,7 +703,6 @@ const Casual = () => {
         onLayoutChange={setLayout}
       />
 
-      <AudioControls />
 
       <style>{`
         .ff-toggle {
