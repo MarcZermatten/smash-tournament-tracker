@@ -318,10 +318,17 @@ const TournamentSetup = () => {
 
   return (
     <div className="home-page">
-      <div className="melee-main-frame dashboard-frame" style={{ maxWidth: '900px' }}>
-        <div className="melee-header">
-          <h1 className="melee-logo">Nouveau Tournoi</h1>
-          <div className="melee-header-line" />
+      <div className="melee-main-frame dashboard-frame" style={{ marginTop: '10vh' }}>
+        {/* Header avec Logo style menu principal */}
+        <div className="subpage-header">
+          <div className="subpage-logo-container">
+            <img src="/logo.png" alt="BFSA" className="subpage-logo" />
+            <div className="subpage-logo-glow"></div>
+          </div>
+          <div className="subpage-title">
+            <h1>NOUVEAU TOURNOI</h1>
+            <span className="mode-subtitle">Configuration et démarrage</span>
+          </div>
         </div>
 
         {/* Steps indicator */}
