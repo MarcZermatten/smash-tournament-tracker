@@ -140,11 +140,11 @@ export const COLORS = [
 
 // Joueurs par défaut
 const DEFAULT_PLAYERS = {
-  marc: { id: 'marc', name: 'Marc', color: '#FF6B6B', initial: 'M', avatar: 'gamewatch', isMain: true, image: '/characters/mr_game_watch.png' },
-  max: { id: 'max', name: 'Max', color: '#4ECDC4', initial: 'MX', avatar: 'hero', isMain: true, image: '/characters/hero.png' },
-  flo: { id: 'flo', name: 'Flo', color: '#FFE66D', initial: 'F', avatar: 'mewtwo', isMain: true, image: '/characters/mewtwo.png' },
-  boris: { id: 'boris', name: 'Boris', color: '#95E1D3', initial: 'B', avatar: 'ness', isMain: true, image: '/characters/ness.png' },
-  daniel: { id: 'daniel', name: 'Daniel', color: '#DDA0DD', initial: 'D', avatar: 'jigglypuff', isMain: false, image: '/characters/jigglypuff.png' }
+  marc: { id: 'marc', name: 'Marc', color: '#32CD32', initial: 'M', avatar: 'gamewatch', isMain: true, image: '/characters/mr_game_watch.png' }, // Vert lime
+  max: { id: 'max', name: 'Max', color: '#4169E1', initial: 'MX', avatar: 'hero', isMain: true, image: '/characters/hero.png' }, // Bleu royal
+  flo: { id: 'flo', name: 'Flo', color: '#FFE66D', initial: 'F', avatar: 'mewtwo', isMain: true, image: '/characters/mewtwo.png' }, // Jaune doré
+  boris: { id: 'boris', name: 'Boris', color: '#FF6B6B', initial: 'B', avatar: 'ness', isMain: true, image: '/characters/ness.png' }, // Rouge corail
+  daniel: { id: 'daniel', name: 'Daniel', color: '#FF8C42', initial: 'D', avatar: 'jigglypuff', isMain: false, image: '/characters/jigglypuff.png' } // Orange
 };
 
 const STORAGE_KEY = 'smash_players';

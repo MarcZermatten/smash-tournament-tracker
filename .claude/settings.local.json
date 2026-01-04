@@ -18,7 +18,8 @@
       "Bash(\"src-tauri/target/release/bundle/msi/Smash Tournament Tracker_0.1.0_x64_en-US.msi\" )",
       "Bash(\"src-tauri/target/release/bundle/nsis/Smash Tournament Tracker_0.1.0_x64-setup.exe\" )",
       "Bash(\"src-tauri/target/release/bundle/msi/Smash Tournament Tracker_1.0.0_x64_en-US.msi\" )",
-      "Bash(\"src-tauri/target/release/bundle/nsis/Smash Tournament Tracker_1.0.0_x64-setup.exe\" )"
+      "Bash(\"src-tauri/target/release/bundle/nsis/Smash Tournament Tracker_1.0.0_x64-setup.exe\" )",
+      "Bash(gh release:*)"
     ]
   }
 }
